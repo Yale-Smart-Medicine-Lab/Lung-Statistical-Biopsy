@@ -1,0 +1,567 @@
+---
+title: "NHIS data cleaning"
+output: html_notebook
+---
+
+**Load the Data**
+
+Load the data into the notebook.
+
+```{r}
+
+NHISdata <- read.csv("/Users/teresanguyen/Documents/Lung Statistical Biopsy/Data Files/NHISdata_1997_2022.csv")
+
+dim(NHISdata)
+colnames(NHISdata)
+
+```
+
+**Clean the data file**
+
+```{r}
+
+library(dplyr)
+NHIS_Edit <- NHISdata %>% select(-YEAR, -SERIAL, -STRATA, -PSU, -NHISHID, -HHWEIGHT, -PERNUM, -NHISPID, -HHX, -FMX, -PX, -PERWEIGHT, -SAMPWEIGHT, -LONGWEIGHT, -PARTWEIGHT, -FWEIGHT, -SUPP1WT, -SUPP2WT, -ASTATFLG, -CSTATFLG)
+
+colnames(NHIS_Edit)
+number_of_features <- ncol(NHIS_Edit)
+
+colnames(NHIS_Edit) <- tolower(colnames(NHIS_Edit))
+
+# age
+NHIS_Edit$age <- NHIS_Edit$age / 100
+
+# gender: 0 = Male | 1 = Female
+NHIS_Edit$gender <- NHIS_Edit$sex - 1
+
+# Race
+NHIS_Edit$raceWh <- ifelse(NHIS_Edit$racenew == 100, 1, 
+                           ifelse(is.na(NHIS_Edit$racenew), NA, 0))
+
+NHIS_Edit$raceBl <- ifelse(NHIS_Edit$racenew == 200, 1,
+                           ifelse(is.na(NHIS_Edit$racenew), NA, 0))
+
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(raceHis = case_when(
+    hispeth %in% c(20, 21, 22, 23, 24, 30, 40, 60, 61, 62, 63, 64, 65, 66, 67, 70) ~ 1,
+    hispeth %in% c(10, 90, 91, 93, 99) ~ 0,
+    hispeth %in% c(92) ~ NA_real_,
+    TRUE ~ NA_real_
+  ))
+
+NHIS_Edit$raceAs <- ifelse(NHIS_Edit$racenew == 400, 1,
+                           ifelse(is.na(NHIS_Edit$racenew), NA, 0))
+
+NHIS_Edit$raceAI <- ifelse(NHIS_Edit$racenew == 300, 1,
+                           ifelse(is.na(NHIS_Edit$racenew), NA, 0))
+
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(raceMis = case_when(
+    racenew %in% c(500, 510, 520, 530) ~ 1,
+    is.na(racenew) ~ NA_real_,
+    TRUE ~ 0 
+  ))
+
+# Education Status
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(edlt8 = case_when(
+    educ %in% c(100, 101, 102, 104, 105, 106, 107, 108, 109, 110) ~ 1,
+    is.na(educ) ~ NA_real_,
+    TRUE ~ 0 
+  ))
+
+NHIS_Edit$ed8t11 <- ifelse(NHIS_Edit$educ == 111, 1,
+                           ifelse(is.na(NHIS_Edit$educ), NA, 0))
+
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(ed12 = case_when(
+    educ %in% c(112, 113, 114, 115, 116, 200, 201, 202) ~ 1,
+    is.na(educ) ~ NA_real_,
+    TRUE ~ 0 
+  ))
+
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(edphs = case_when(
+    educ %in% c(300, 301, 302, 303) ~ 1,
+    is.na(educ) ~ NA_real_,
+    TRUE ~ 0 
+  ))
+
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(edscol = case_when(
+    educ %in% c(400, 500, 501, 502, 503, 504, 505) ~ 1,
+    is.na(educ) ~ NA_real_, 
+    TRUE ~ 0
+  ))
+
+NHIS_Edit$edcol <- ifelse(NHIS_Edit$educ == 400, 1,
+                           ifelse(is.na(NHIS_Edit$educ), NA, 0))
+
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(edpcol = case_when(
+    educ %in% c(500, 501, 502, 503, 504, 505) ~ 1,
+    is.na(educ) ~ NA_real_, 
+    TRUE ~ 0
+  ))
+
+# marriage status
+cat("Starting marriage status")
+
+# married or living as married
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(marmar = case_when(
+    marstcur %in% c(1, 2, 3) ~ 1,
+    is.na(marstcur) ~ NA_real_, 
+    TRUE ~ 0
+  ))
+
+# widowed
+NHIS_Edit$marwid <- ifelse(NHIS_Edit$marstcur == 6, 1,
+                           ifelse(is.na(NHIS_Edit$marstcur), NA, 0))
+
+# divorced
+NHIS_Edit$mardiv <- ifelse(NHIS_Edit$marstcur == 5, 1,
+                           ifelse(is.na(NHIS_Edit$marstcur), NA, 0))
+
+# Separated
+NHIS_Edit$marsep <- ifelse(NHIS_Edit$marstcur == 4, 1,
+                           ifelse(is.na(NHIS_Edit$marstcur), NA, 0))
+
+# Never Married
+NHIS_Edit$marnvm <- ifelse(NHIS_Edit$marstcur == 8, 1,
+                           ifelse(is.na(NHIS_Edit$marstcur), NA, 0))
+
+# Occupation Status
+cat("Starting Occupation Status")
+
+# Working
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(occwrk = case_when(
+    empstat %in% c(100, 110, 111, 112, 120, 121, 122) ~ 1,
+    is.na(empstat) ~ NA_real_,  
+    TRUE ~ 0  
+  ))
+
+# Unemployment
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(occune = case_when(
+    empstat %in% c(200, 210, 211, 212, 213, 214, 215, 216, 217) ~ 1,
+    is.na(empstat) ~ NA_real_,  
+    TRUE ~ 0  
+  ))
+
+# Retired
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(occret = case_when(
+    empstat %in% c(220) ~ 1,
+    is.na(empstat) ~ NA_real_,  
+    TRUE ~ 0  
+  ))
+
+# Other occupation status
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(occoth = case_when(
+    empstat %in% c(000, 900, 997, 998, 999) ~ 1,
+    is.na(empstat) ~ NA_real_,  
+    TRUE ~ 0  
+  ))
+
+cat("Starting health related")
+
+# BMI
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(bmi_curr = case_when(
+    bmi %in% c(0000, 9980, 9999) ~ NA_real_,
+    TRUE ~ bmi / 100
+  ))
+
+# Weight
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(weight = case_when(
+    weight %in% c(000, 996, 997, 998, 999) ~ NA_real_,
+    TRUE ~ weight / 500
+  ))
+
+# arthritis
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(arthglupev = coalesce(arthglupev, climarthmo))
+
+unique(NHIS_Edit$arthglupev)
+
+# Ever have arthritis 
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(arthrit_f = case_when(
+    arthglupev %in% c(40, 30, 20, 10, 2) ~ 1,
+    is.na(arthglupev) ~ NA_real_,  
+    TRUE ~ 0  
+  ))
+
+# Ever have bronchitis 
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(bronchit_f = case_when(
+    cronbronyr == 2 ~ 1,            
+    cronbronyr == 1 ~ 0,            
+    cronbronyr %in% c(7, 8, 9) ~ NA_real_, 
+    TRUE ~ NA_real_                 
+))
+
+# Ever have diabetes
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(diabetes_f = case_when(
+    diabeticev %in% c(2,3) ~ 1,            
+    diabeticev == 1 ~ 0,            
+    diabeticev %in% c(7, 8, 9) ~ NA_real_, 
+    TRUE ~ NA_real_                 
+))
+
+# Have emphysema
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(emphys_f = case_when(
+    cronbronyr == 2 ~ 1,            
+    cronbronyr == 1 ~ 0,            
+    cronbronyr %in% c(7, 8, 9) ~ NA_real_, 
+    TRUE ~ NA_real_                 
+))
+
+# heart attack
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(hearta_f = case_when(
+    heartattev == 2 ~ 1,            
+    heartattev == 1 ~ 0,            
+    heartattev %in% c(7, 8, 9) ~ NA_real_, 
+    TRUE ~ NA_real_                 
+))
+
+# hypertension
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(hyperten_f = case_when(
+    hypertenev == 2 ~ 1,            
+    hypertenev == 1 ~ 0,            
+    hypertenev %in% c(7, 8, 9) ~ NA_real_, 
+    TRUE ~ NA_real_                 
+))
+
+# liver comorbidity
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(liver_comorbidity = case_when(
+    hepatev == 2 ~ 1,            
+    hepatev == 1 ~ 0,            
+    hepatev %in% c(7, 8, 9) ~ NA_real_, 
+    TRUE ~ NA_real_                 
+))
+
+# osteoporosis
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(osteopor_f = case_when(
+    osteoporev == 2 ~ 1,            
+    osteoporev == 1 ~ 0,            
+    osteoporev %in% c(7, 8, 9) ~ NA_real_, 
+    TRUE ~ NA_real_                 
+))
+
+# polyps
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(polyps_f = case_when(
+    polyp3yr == 2 ~ 1,            
+    polyp3yr == 1 ~ 0,            
+    polyp3yr %in% c(7, 8, 9) ~ NA_real_, 
+    TRUE ~ NA_real_                 
+))
+
+# Stroke
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(stroke_f = case_when(
+    strokev == 2 ~ 1,            
+    strokev == 1 ~ 0,            
+    strokev %in% c(7, 8, 9) ~ NA_real_, 
+    TRUE ~ NA_real_                 
+))
+
+# Smoke Frequently Now
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(smoked_f = case_when(
+    smokfreqnow %in% c(2, 3) ~ 1,            
+    smokfreqnow == 1 ~ 0,            
+    smokfreqnow %in% c(7, 8, 9) ~ NA_real_, 
+    TRUE ~ NA_real_                 
+))
+
+# current smoking status
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(cig_stat = case_when(
+    smokfreqnow %in% c(2, 3) ~ 1,            
+    smokfreqnow == 1 ~ 0,            
+    smokfreqnow %in% c(7, 8, 9) ~ NA_real_, 
+    TRUE ~ NA_real_                 
+))
+
+# aspirin
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(asp = case_when(
+    asponown == 2 ~ 1,            
+    asponown == 1 ~ 0,            
+    asponown %in% c(7, 8, 9) ~ NA_real_, 
+    TRUE ~ NA_real_                 
+))
+
+# ibuprofen
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(ibup = case_when(
+    pmibupro == 2 ~ 1,            
+    pmibupro == 1 ~ 0,            
+    pmibupro %in% c(7, 8, 9) ~ NA_real_, 
+    TRUE ~ NA_real_                 
+))
+
+# age of lung cancer
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(lung_fh_age = case_when(
+    cnlungag %in% c(96, 97, 98, 99) ~ NA_real_,  
+    TRUE ~ cnlungag / 100  
+  ))
+
+# Number of relatives with lung cancer
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(lung_fh_cnt = case_when(
+    fsnlgcan %in% c(2, 21, 97, 98, 99) | fbnlgcan %in% c(2, 21, 97, 98, 99) ~ NA_real_,  # Set to NA for specified values
+    TRUE ~ fsnlgcan + fbnlgcan  # Add the two columns otherwise
+  ))
+
+# Ever had cancer
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(trial_ph_any = case_when(
+    cancerev == 2 ~ 1,            
+    cancerev == 1 ~ 0,            
+    cancerev %in% c(7, 8, 9) ~ NA_real_, 
+    TRUE ~ NA_real_                 
+))
+
+# hysterectomy
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(hyster_f = case_when(
+    hystev == 2 ~ 1,            
+    hystev == 1 ~ 0,            
+    hystev %in% c(7, 8, 9) ~ NA_real_, 
+    TRUE ~ NA_real_                 
+))
+
+# age at hysterectomy
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(hystera = case_when(
+    hysterag %in% c(97, 98, 99, 0) ~ NA_real_,
+    TRUE ~ hysterag / 100
+  ))
+
+# removed ovaries
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(ovaries_f = case_when(
+    ovect == 2 ~ 1,            
+    ovect == 1 ~ 0,            
+    ovect %in% c(7, 8, 9) ~ NA_real_, 
+    TRUE ~ NA_real_                 
+))
+
+# ever take birth control pills
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(bcontr_f = case_when(
+    bcpilnow == 2 ~ 1,            
+    bcpilnow == 1 ~ 0,            
+    bcpilnow %in% c(7, 8, 9) ~ NA_real_, 
+    TRUE ~ NA_real_                 
+))
+
+# taking female hormones now
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(curhorm = case_when(
+    estronow == 2 ~ 1,            
+    estronow == 1 ~ 0,            
+    estronow %in% c(7, 8, 9) ~ NA_real_, 
+    TRUE ~ NA_real_                 
+))
+
+# ever take female hormones
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(horm_f = case_when(
+    estrogev == 2 ~ 1,            
+    estrogev == 1 ~ 0,            
+    estrogev %in% c(7, 8, 9) ~ NA_real_, 
+    TRUE ~ NA_real_                 
+))
+
+# Number of years taking female hormones
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(thorm = case_when(
+    estrogyr %in% c(0, 97, 98, 99) ~ NA_real_,
+    TRUE ~ estrogyr / 100  
+  ))
+
+# Number of live births
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(livec = cheb, 
+         livec = if_else(livec %in% c(0, 96, 97, 98, 99), NA_real_, livec), 
+         livec = if_else(livec >= 5, 5, livec), 
+         livec = livec / 5) 
+
+# Ever been pregnant
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(preg_f = case_when(
+    pregever == 2 ~ 1,            
+    pregever == 1 ~ 0,            
+    pregever %in% c(7, 8, 9) ~ NA_real_, 
+    TRUE ~ NA_real_                 
+))
+
+# age when had first menarche
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(fmenstr = menarch,
+         fmenstr = case_when(
+           fmenstr %in% c(96, 97, 98, 99) ~ NA_real_,
+           fmenstr < 10 ~ 1,
+           fmenstr >= 10 & fmenstr <= 11 ~ 2,
+           fmenstr >= 12 & fmenstr <= 13 ~ 3,
+           fmenstr >= 14 & fmenstr <= 15 ~ 4,
+           fmenstr >= 16 ~ 5, 
+           TRUE ~ fmenstr 
+         ),
+         fmenstr = fmenstr / 5) 
+
+# breast cancer
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(bbd = case_when(
+    cnbres == 2 ~ 1,            
+    cnbres == 1 ~ 0,            
+    cnbres %in% c(7, 8, 9) ~ NA_real_, 
+    TRUE ~ NA_real_                 
+))
+
+# ovarian cancer
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(benign_ovcyst = case_when(
+    cnovar == 2 ~ 1,            
+    cnovar == 1 ~ 0,            
+    cnovar %in% c(7, 8, 9) ~ NA_real_, 
+    TRUE ~ NA_real_                 
+))
+
+# uterine cancer
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(uterine_fib = case_when(
+    cnuter == 2 ~ 1,            
+    cnuter == 1 ~ 0,            
+    cnuter %in% c(7, 8, 9) ~ NA_real_, 
+    TRUE ~ NA_real_                 
+))
+
+# prostate problems
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(enlpros_f = case_when(
+    prostateyr == 2 ~ 1,            
+    prostateyr == 1 ~ 0,            
+    prostateyr %in% c(7, 8, 9) ~ NA_real_, 
+    TRUE ~ NA_real_                 
+))
+
+# age when the patient had an enlarged prostate
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(enlprosa = cnprosag, 
+         enlprosa = case_when(
+           enlprosa %in% c(0, 96, 97, 98, 99) ~ NA_real_, 
+           enlprosa < 30 ~ 1,  
+           enlprosa >= 30 & enlprosa <= 39 ~ 2,  
+           enlprosa >= 40 & enlprosa <= 49 ~ 3,  
+           enlprosa >= 50 & enlprosa <= 59 ~ 4,  
+           enlprosa >= 60 & enlprosa <= 69 ~ 5, 
+           enlprosa >= 70 ~ 6,  
+           TRUE ~ enlprosa 
+         ),
+         enlprosa = enlprosa / 6) 
+
+# have lung cancer?
+
+NHIS_Edit <- NHIS_Edit %>%
+  mutate(lung = case_when(
+    cnlung == 2 ~ 1,            
+    cnlung == 1 ~ 0,            
+    cnlung %in% c(7, 8, 9) ~ 0, 
+    TRUE ~ 0                 
+))
+
+cleanedData <- data.frame(
+  age = NHIS_Edit$age,
+  gender = NHIS_Edit$gender,
+  raceWh = NHIS_Edit$raceWh,
+  raceBl = NHIS_Edit$raceBl,
+  raceHis = NHIS_Edit$raceHis,
+  raceAs = NHIS_Edit$raceAs,
+  raceAI = NHIS_Edit$raceAI,
+  raceMis = NHIS_Edit$raceMis,
+  edlt8 = NHIS_Edit$edlt8,
+  ed8t11 = NHIS_Edit$ed8t11,
+  ed12 = NHIS_Edit$ed12,
+  edphs = NHIS_Edit$edphs,
+  edscol = NHIS_Edit$edscol,
+  edcol = NHIS_Edit$edcol,
+  edpcol = NHIS_Edit$edpcol,
+  marmar = NHIS_Edit$marmar,
+  marwid = NHIS_Edit$marwid,
+  mardiv = NHIS_Edit$mardiv,
+  marsep = NHIS_Edit$marsep,
+  marnvm = NHIS_Edit$marnvm,
+  occwrk = NHIS_Edit$occwrk, 
+  occune = NHIS_Edit$occune,
+  occret = NHIS_Edit$occret,
+  occoth = NHIS_Edit$occoth,
+  bmi_curr = NHIS_Edit$bmi_curr, 
+  arthrit_f = NHIS_Edit$arthrit_f,
+  bronchit_f = NHIS_Edit$bronchit_f,
+  diabetes_f = NHIS_Edit$diabetes_f,
+  emphys_f = NHIS_Edit$emphys_f,
+  hearta_f = NHIS_Edit$hearta_f,
+  hyperten_f = NHIS_Edit$hyperten_f,
+  liver_comorbidity = NHIS_Edit$liver_comorbidity,
+  osteopor_f = NHIS_Edit$osteopor_f,
+  polyps_f = NHIS_Edit$polyps_f,
+  stroke_f = NHIS_Edit$stroke_f,
+  smoked_f = NHIS_Edit$smoked_f,
+  cig_stat = NHIS_Edit$cig_stat,
+  asp = NHIS_Edit$asp,
+  ibup = NHIS_Edit$ibup,
+  lung_fh_age = NHIS_Edit$lung_fh_age,
+  lung_fh_cnt = NHIS_Edit$lung_fh_cnt,
+  trial_ph_any = NHIS_Edit$trial_ph_any,
+  hyster_f = NHIS_Edit$hyster_f,
+  hystera = NHIS_Edit$hystera,
+  ovaries_f = NHIS_Edit$ovaries_f,
+  bcontr_f = NHIS_Edit$bcontr_f,
+  curhorm = NHIS_Edit$curhorm,
+  horm_f = NHIS_Edit$horm_f,
+  thorm = NHIS_Edit$thorm,
+  livec = NHIS_Edit$livec,
+  preg_f = NHIS_Edit$preg_f,
+  fmenstr = NHIS_Edit$fmenstr,
+  bbd = NHIS_Edit$bbd,
+  benign_ovcyst = NHIS_Edit$benign_ovcyst,
+  uterine_fib = NHIS_Edit$uterine_fib,
+  enlpros_f = NHIS_Edit$enlpros_f,
+  lung = NHIS_Edit$lung
+)
+
+
+```
+```{r}
+
+writeDataFiles <- function(data) {
+  male_only_columns <- c('enlpros_f')
+  female_only_columns <- c('hyster_f', 'hystera', 'ovaries_f', 'bcontr_f', 'curhorm', 'horm_f', 'thorm', 'livec', 'preg_f', 'fmenstr', 'bbd', 'benign_ovcyst', 'uterine_fib')
+  
+  male_data <- data[data$gender == 0, !(names(data) %in% female_only_columns)]
+  write.csv(male_data, 'male_NHISdata.csv', row.names = FALSE)
+  
+  female_data <- data[data$gender == 1, !names(data) %in% male_only_columns]
+  write.csv(female_data, 'female_NHISdata.csv', row.names = FALSE)
+}
+
+writeDataFiles(cleanedData)
+
+
+```

@@ -1,0 +1,394 @@
+---
+title: "Prepare PLCO Lung Cancer Data"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+This R notebook cleans the *PLCO lung data* by utilizing one hot encoding, transforming variables, and removing data that is not necessary for the training and testing.
+
+Read in the data.
+
+```{r}
+
+library(dplyr)
+
+lungFile <- read.csv("/Users/teresanguyen/Downloads/CleaningLungData/Data Files/lung.data.feb16.d080516.csv", as.is = TRUE)
+
+# colnames(lungFile)
+# ncol(lungFile)
+
+head(lungFile)
+
+
+```
+
+Process the dataset.
+
+```{r}
+
+processData <- function(lungData) {
+  
+  # remove all participants who did not return the BQ
+  lungData <- lungData[lungData$bq_returned != 0, ]
+  
+  # remove all missing or death certificate only for (days until lung cancer diagnosis)
+  # we might keep death certificate... pros: more data, cons: make decision of when they got cancer (upper limit) - year before they died? etc. 
+  
+  # but we dropped all the missing values here...
+  lungData <- lungData[!(lungData$candxdaysl %in% c("D", "M")), ]
+  
+  #lungFile$candxdaysl
+  
+  # people who had cancer before they joined the studies (in the past we removed, but for those people, we can predict if the return rate of cancer)
+  
+  # set gender - males = 0 / females = 1
+  lungData$gender <- lungData$sex - 1
+  
+  # normalize age
+  lungData$age <- lungData$age / 100
+  
+  # One hot encoding: Race
+  lungData$race7 <- as.integer(lungData$race7)
+  lungData$raceWh <- as.numeric(lungData$race7 == 1)
+  lungData$raceBl <- as.numeric(lungData$race7 == 2)
+  lungData$raceHis <- as.numeric(lungData$race7 == 3)
+  lungData$raceAs <- as.numeric(lungData$race7 == 4)
+  lungData$racePI <- as.numeric(lungData$race7 == 5)
+  lungData$raceAI <- as.numeric(lungData$race7 == 6)
+
+  # One hot encoding: Education
+  # keep instead of dropping "M" -- leave it. 
+  lungData$educat[lungData$educat != "M"] <- 9
+  lungData$educat <- as.numeric(lungData$educat)
+  lungData$edlt8 <- as.numeric(lungData$educat == 1)
+  lungData$ed8t11 <- as.numeric(lungData$educat == 2)
+  lungData$ed12 <- as.numeric(lungData$educat == 3)
+  lungData$edphs <- as.numeric(lungData$educat == 4)
+  lungData$edscol <- as.numeric(lungData$educat == 5)
+  lungData$edcol <- as.numeric(lungData$educat == 6)
+  lungData$edpcol <- as.numeric(lungData$educat == 7)  
+
+  # One hot encoding: Martial Status
+  lungData$marital <- as.numeric(lungData$marital)
+  lungData$marmar <- as.numeric(lungData$marital == 1)
+  lungData$marwid <- as.numeric(lungData$marital == 2)
+  lungData$mardiv <- as.numeric(lungData$marital == 3)
+  lungData$marsep <- as.numeric(lungData$marital == 4)
+  lungData$marnvm <- as.numeric(lungData$marital == 5)
+  
+  # One hot encoding: Occupation Status
+  lungData$occupat <- as.numeric(lungData$occupat)
+  lungData$occhmk <- as.numeric(lungData$occupat == 1)
+  lungData$occwrk <- as.numeric(lungData$occupat == 2)
+  lungData$occune <- as.numeric(lungData$occupat == 3)
+  lungData$occret <- as.numeric(lungData$occupat == 4)
+  lungData$occesl <- as.numeric(lungData$occupat == 5)
+  lungData$occdis <- as.numeric(lungData$occupat == 6)
+  lungData$occoth <- as.numeric(lungData$occupat == 7)
+  
+  # Normalize BMI
+  lungData$bmi_curr[lungData$bmi_curr %in% c("M", "R")] <- NA
+  non_na_indices <- !is.na(lungData$bmi_curr)
+  lungData$bmi_curr <- as.numeric(lungData$bmi_curr) / 100
+  
+  # Normalize weight at 20 years old
+  lungData$weight20_f <- as.numeric(lungData$weight20_f) / 500
+  
+  # BQ diseases
+  
+  BQ_diseases <- c('arthrit_f','bronchit_f','colon_comorbidity', 'diabetes_f', 'divertic_f', 'emphys_f', 'gallblad_f', 'hearta_f', 'hyperten_f', 'liver_comorbidity', 'osteopor_f', 'polyps_f', 'stroke_f')
+  
+  for (disease in BQ_diseases) {
+    lungData[[disease]][lungData[[disease]] == "M"] <- NA
+  }
+  
+  # Smoking
+  
+  smoking_factors <- c('smoked_f', 'cig_stat', 'cig_stop', 'pack_years', 'cig_stop')
+  
+  for(factors in smoking_factors) {
+    lungData[[factors]][lungData[[factors]] == "M"] <- NA
+    if(factors == "cig_stat")
+    {
+      lungData[[factors]][lungData[[factors]] == "A"] <- NA
+    }
+    else if(factors == "cig_stop")
+    {
+      lungData[[factors]][lungData[[factors]] == 'N'] <- NA
+    }
+  }
+  
+  lungData$cig_stop <- as.numeric(lungData$cig_stop) / 100
+  lungData$pack_years <- as.numeric(lungData$pack_years) / 100
+  
+  # NSAIDS - Medicine 
+  
+  lungData$asppd[lungData$asppd == "M"] <- NA
+  lungData$ibuppd[lungData$ibuppd == "M"] <- NA 
+  
+  lungData$asppd[lungData$asppd == 1] <- 30
+  lungData$asppd[lungData$asppd == 2] <- 30 * 2
+  lungData$asppd[lungData$asppd == 3] <- 4
+  lungData$asppd[lungData$asppd == 4] <- 4 * 2
+  lungData$asppd[lungData$asppd == 5] <- 4 * 3
+  lungData$asppd[lungData$asppd == 6] <- 1
+  lungData$asppd[lungData$asppd == 7] <- 2
+
+  lungData$ibuppd[lungData$ibuppd == 1] <- 30
+  lungData$ibuppd[lungData$ibuppd == 2] <- 30 * 2
+  lungData$ibuppd[lungData$ibuppd == 3] <- 4
+  lungData$ibuppd[lungData$ibuppd == 4] <- 4 * 2
+  lungData$ibuppd[lungData$ibuppd == 5] <- 4 * 3
+  lungData$ibuppd[lungData$ibuppd == 6] <- 1
+  lungData$ibuppd[lungData$ibuppd == 7] <- 2
+  
+  lungData$asppd <- as.numeric(lungData$asppd) / 60
+  lungData$ibuppd <- as.numeric(lungData$ibuppd) / 60
+  
+  # family history
+  
+  cancers <- c('lung')
+  for (cancer in cancers) {
+    lungData[[paste0(cancer, '_fh')]][lungData[[paste0(cancer, '_fh')]] %in% c('M', '9')] <- NA
+    lungData[[paste0(cancer, '_fh_age')]][lungData[[paste0(cancer, '_fh_age')]] %in% c('M', 'N', 'A')] <- NA
+    lungData[[paste0(cancer, '_fh_cnt')]][lungData[[paste0(cancer, '_fh_cnt')]] == 'M'] <- NA
+    lungData[[paste0(cancer, '_fh')]] <- as.numeric(lungData[[paste0(cancer, '_fh')]])
+    lungData[[paste0(cancer, '_fh_age')]] <- as.numeric(lungData[[paste0(cancer, '_fh_age')]]) / 100
+    lungData[[paste0(cancer, '_fh_cnt')]] <- as.numeric(lungData[[paste0(cancer, '_fh_cnt')]]) / 10
+  }
+
+  for (cancer in cancers) {
+    lungData[[paste0('trial_ph_', cancer)]] <- as.numeric(lungData[[paste0('trial_ph_', cancer)]])
+    lungData[lungData[[paste0('trial_ph_', cancer)]] == 9, paste0('trial_ph_', cancer)] <- NA
+    lungData[[paste0(cancer, '_is_first_dx')]] <- as.numeric(lungData[[paste0(cancer, '_is_first_dx')]])
+  }
+  
+  for (cancer in cancers) {
+  lungData[lungData[[paste0(cancer, "_candxdaysl")]] == 'N', paste0(cancer, "_candxdaysl")] <- NA
+  lungData[[cancer]] <- as.numeric(as.character(lungData[[paste0(cancer, "_candxdaysl")]]))
+}
+  
+  
+  # Add female-specific features to lungData
+  lungData[lungData$hystera %in% c('M', 'N', 'G'), 'hystera'] <- NA
+  lungData[lungData$ovariesr_f %in% c('M', 'G', '5', '8'), 'ovariesr_f'] <- NA
+  lungData[lungData$tuballig %in% c('M', 'G', '2'), 'tuballig'] <- NA
+  lungData[lungData$bcontr_f %in% c('M', 'G'), 'bcontr_f'] <- NA
+  lungData[lungData$bcontra %in% c('M', 'N', 'G'), 'bcontra'] <- NA
+  lungData[lungData$curhorm %in% c('M', 'G'), 'curhorm'] <- NA
+  lungData[lungData$horm_f %in% c('M', 'G', '2'), 'horm_f'] <- NA
+  lungData[lungData$thorm %in% c('M', 'G'), 'thorm'] <- NA
+  lungData[lungData$fchilda %in% c('M', 'N', 'G'), 'fchilda'] <- NA
+  lungData[lungData$livec %in% c('M', 'G'), 'livec'] <- NA
+  lungData[lungData$miscar %in% c('M', 'G'), 'miscar'] <- NA
+  lungData[lungData$preg_f %in% c('M', 'G', '2'), 'preg_f'] <- NA
+  lungData[lungData$stillb %in% c('M', 'G'), 'stillb'] <- NA
+  lungData[lungData$trypreg %in% c('M', 'G'), 'trypreg'] <- NA
+  lungData[lungData$tubal %in% c('M', 'G'), 'tubal'] <- NA
+  lungData[lungData$fmenstr %in% c('M', 'G'), 'fmenstr'] <- NA
+  lungData[lungData$bbd %in% c('M', 'G'), 'bbd'] <- NA
+  lungData[lungData$benign_ovcyst %in% c('M', 'G'), 'benign_ovcyst'] <- NA
+  lungData[lungData$endometriosis %in% c('M', 'G'), 'endometriosis'] <- NA
+  lungData[lungData$uterine_fib %in% c('M', 'G'), 'uterine_fib'] <- NA
+  lungData$hystera <- as.numeric(lungData$hystera) / 5
+  lungData$ovariesr_f <- as.numeric(lungData$ovariesr_f) / 4
+  lungData$tuballig <- as.numeric(lungData$tuballig)
+  lungData$bcontr_f <- as.numeric(lungData$bcontr_f)
+  lungData$bcontra <- as.numeric(lungData$bcontra) / 4
+  lungData$curhorm <- as.numeric(lungData$curhorm)
+  lungData$horm_f <- as.numeric(lungData$horm_f)
+  lungData$thorm <- as.numeric(lungData$thorm) / 5
+  lungData$fchilda <- as.numeric(lungData$fchilda) / 7
+  lungData$livec <- as.numeric(lungData$livec) / 5
+  lungData$miscar <- as.numeric(lungData$miscar) / 2
+  lungData$preg_f <- as.numeric(lungData$preg_f)
+  lungData$stillb <- as.numeric(lungData$stillb) / 2
+  lungData$trypreg <- as.numeric(lungData$trypreg)
+  lungData$tubal <- as.numeric(lungData$tubal) / 2
+  lungData$fmenstr <- as.numeric(lungData$fmenstr) / 5
+  lungData$bbd <- as.numeric(lungData$bbd)
+  lungData$benign_ovcyst <- as.numeric(lungData$benign_ovcyst)
+  lungData$endometriosis <- as.numeric(lungData$endometriosis)
+  lungData$uterine_fib <- as.numeric(lungData$uterine_fib)
+  
+  # Add male-specific features to lungData
+  lungData[lungData$enlpros_f %in% c('M', 'G'), 'enlpros_f'] <- NA
+  lungData[lungData$enlprosa %in% c('M', 'G', 'N'), 'enlprosa'] <- NA
+  lungData[lungData$infpros_f %in% c('M', 'G'), 'infpros_f'] <- NA
+  lungData[lungData$infprosa %in% c('M', 'G', 'N'), 'infprosa'] <- NA
+  lungData[lungData$urinate_f %in% c('M', 'G'), 'urinate_f'] <- NA
+  lungData[lungData$urinatea %in% c('M', 'G', 'N'), 'urinatea'] <- NA
+  lungData[lungData$surg_age %in% c('M', 'G', 'N'), 'surg_age'] <- NA
+  lungData[lungData$surg_biopsy %in% c('M', 'G'), 'surg_biopsy'] <- NA
+  lungData[lungData$surg_prostatectomy %in% c('M', 'G'), 'surg_prostatectomy'] <- NA
+  lungData[lungData$surg_resection %in% c('M', 'G'), 'surg_resection'] <- NA
+  lungData[lungData$vasect_f %in% c('M', 'G'), 'vasect_f'] <- NA
+  lungData[lungData$vasecta %in% c('M', 'G', 'N'), 'vasecta'] <- NA
+  
+  lungData$enlpros_f <- as.numeric(lungData$enlpros_f)
+  lungData$enlprosa <- as.numeric(lungData$enlprosa) / 6
+  lungData$infpros_f <- as.numeric(lungData$infpros_f)
+  lungData$infprosa <- as.numeric(lungData$infprosa) / 6
+  lungData$urinate_f <- as.numeric(lungData$urinate_f) / 5
+  lungData$urinatea <- as.numeric(lungData$urinatea) / 6
+  lungData$surg_age <- as.numeric(lungData$surg_age) / 5
+  lungData$surg_biopsy <- as.numeric(lungData$surg_biopsy)
+  lungData$surg_prostatectomy <- as.numeric(lungData$surg_prostatectomy)
+  lungData$surg_resection <- as.numeric(lungData$surg_resection)
+  lungData$vasect_f <- as.numeric(lungData$vasect_f)
+  lungData$vasecta <- as.numeric(lungData$vasecta) / 4
+  # gives the number of days or a letter (20 * 265)
+  # --------turn the candxdaysl "N" into (20 x 365 -- 20 years to numeric)
+  lungData$candxdaysl <- as.numeric(ifelse(lungData$candxdaysl == "N", 20 * 365, lungData$candxdaysl))
+  
+  # Create DatasetCleaned (new data frame)
+  DatasetCleaned <- data.frame(
+    gender = lungData$gender,
+    age = lungData$age,
+    raceWh = lungData$raceWh,
+    raceBl = lungData$raceBl,
+    raceAs = lungData$raceAs,
+    racePI = lungData$racePI,
+    raceAI = lungData$raceAI,
+    raceHis = lungData$raceHis,
+    #raceMis = lungData$raceMis
+    edlt8 = lungData$edlt8,
+    ed8t11 = lungData$ed8t11,
+    ed12 = lungData$ed12,
+    edphs = lungData$edphs,
+    edscol = lungData$edscol,
+    edcol = lungData$edcol,
+    edpcol = lungData$edpcol,
+    marmar = lungData$marmar,
+    marwid = lungData$marwid,
+    mardiv = lungData$mardiv,
+    marsep = lungData$marsep,
+    marnvm = lungData$marnvm,
+    #occupat = lungData$occupat,
+    occhmk = lungData$occhmk,
+    occwrk = lungData$occwrk,
+    occune = lungData$occune,
+    occret = lungData$occret,
+    occesl = lungData$occesl,
+    occdis = lungData$occdis, 
+    occoth = lungData$occoth,
+    bmi_curr = lungData$bmi_curr,
+    weight20_f = lungData$weight20_f,
+    arthrit_f = lungData$arthrit_f,
+    bronchit_f = lungData$bronchit_f,
+    colon_comorbidity = lungData$colon_comorbidity,
+    diabetes_f = lungData$diabetes_f,
+    divertic_f = lungData$divertic_f,
+    emphys_f = lungData$emphys_f,
+    gallblad_f = lungData$gallblad_f,
+    hearta_f = lungData$hearta_f,
+    hyperten_f = lungData$hyperten_f,
+    liver_comorbidity = lungData$liver_comorbidity,
+    osteopor_f = lungData$osteopor_f,
+    polyps_f = lungData$polyps_f,
+    stroke_f = lungData$stroke_f,
+    smoked_f = lungData$smoked_f,
+    cig_stat = lungData$cig_stat,
+    cig_stop = lungData$cig_stop,
+    pack_years = lungData$pack_years,
+    asppd = lungData$asppd,
+    ibuppd = lungData$ibuppd,
+    lung_fh_age = lungData$lung_fh_age,
+    lung_fh = lungData$lung_fh, 
+    lung_fh_cnt = lungData$lung_fh_cnt,
+    trial_ph_lung = lungData$trial_ph_lung,
+    trial_ph_any = lungData$trial_ph_any,
+    lung_is_first_dx = lungData$lung_is_first_dx,
+    hystera = lungData$hystera,
+    ovariesr_f = lungData$ovariesr_f,
+    tuballig = lungData$tuballig,
+    bcontr_f = lungData$bcontr_f,
+    bcontra = lungData$bcontra,
+    curhorm = lungData$curhorm,
+    horm_f = lungData$horm_f,
+    thorm = lungData$thorm,
+    fchilda = lungData$fchilda,
+    livec = lungData$livec,
+    miscar = lungData$miscar,
+    preg_f = lungData$preg_f,
+    stillb = lungData$stillb,
+    trypreg = lungData$trypreg,
+    tubal = lungData$tubal,
+    fmenstr = lungData$fmenstr,
+    bbd = lungData$bbd,
+    benign_ovcyst = lungData$benign_ovcyst,
+    endometriosis = lungData$endometriosis,
+    uterine_fib = lungData$uterine_fib,
+    enlpros_f = lungData$enlpros_f,
+    enlprosa = lungData$enlprosa,
+    infpros_f = lungData$infpros_f,
+    infprosa = lungData$infprosa,
+    urinate_f = lungData$urinate_f,
+    urinatea = lungData$urinatea,
+    surg_age = lungData$surg_age,
+    surg_biopsy = lungData$surg_biopsy,
+    surg_prostatectomy = lungData$surg_prostatectomy,
+    surg_resection = lungData$surg_resection,
+    vasect_f = lungData$vasect_f,
+    vasecta = lungData$vasecta,
+    lung = lungData$candxdaysl
+  )
+  return(DatasetCleaned)
+}
+
+# Call the function with lungFile dataset
+cleanedData <- processData(lungFile)
+
+
+```
+
+Write data files. Separate by male and female and testing and training sets. 
+
+```{r}
+
+writeDataFiles <- function(data, days_cutoff) {
+  male_only_columns <- c('enlpros_f', 'enlprosa', 'infpros_f', 'infprosa',
+                         'urinate_f', 'urinatea', 'surg_age', 'surg_biopsy',
+                         'surg_prostatectomy', 'surg_resection', 'vasect_f',
+                         'vasecta', 'mbreast', 'pros')
+  male_cancers <- c('lung')
+  female_only_columns <- c('hystera', 'ovariesr_f', 'tuballig', 'bcontr_f',
+                           'bcontra', 'curhorm', 'horm_f', 'thorm', 'fchilda',
+                           'livec', 'miscar', 'preg_f', 'stillb', 'trypreg',
+                           'tubal', 'fmenstr', 'bbd', 'benign_ovcyst',
+                           'endometriosis', 'uterine_fib', 'breast', 'endo',
+                           'ovar')
+  female_cancers <- c('lung')
+  columns <- names(data)
+  
+
+  male_data <- data[data$gender == 0, !(names(data) %in% female_only_columns)]
+  male_data[, male_cancers] <- male_data[, male_cancers] <= days_cutoff
+  
+  # AUC is 0.5 --> equal to random guessing --> 1 is always right --> 0 is always wrong --> below 0.5 means that you did something
+  
+  # FALSE and TRUE turn into 0 and 1
+  male_data$lung <- as.integer(male_data$lung)
+
+
+  write.csv(male_data, 'male_lung_data.csv', row.names = FALSE)
+
+  female_data <- data[data$gender == 1, !names(data) %in% male_only_columns]
+  female_data[, female_cancers] <- female_data[, female_cancers] <= days_cutoff
+
+  # if NA --> FALSE
+  # FALSE and TRUE turn into 0 and 1
+  female_data$lung <- as.integer(female_data$lung)
+
+  write.csv(female_data, 'female_lung_data.csv', row.names = FALSE)
+  
+}
+
+writeDataFiles(cleanedData, 5 * 365)
+
+
+```
+
+

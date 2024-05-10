@@ -1,0 +1,134 @@
+---
+title: "Cleaning NHIS Data"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+Load NHIS Data
+
+```{r}
+
+NHISData <- read.csv("/Users/teresanguyen/Downloads/nhis_00004.csv", as.is = T)
+
+dim(NHISData)
+colnames(NHISData)
+
+```
+
+How much missing data is there for each feature?
+
+```{r}
+
+missing_percentage <- sapply(NHISData, function(x) sum(is.na(x)) / length(x) * 100)
+
+Present_data_table <- data.frame(
+  Column = names(missing_percentage),
+  PresentPercentage = 100 - missing_percentage
+)
+
+print(Present_data_table)
+
+Present_30 <- Present_data_table[Present_data_table$PresentPercentage >= 30.0, ]
+print(Present_30)
+cat(Present_30$Column)
+nrow(Present_30)
+
+Absent_70 <- Present_data_table[Present_data_table$PresentPercentage < 30, ]
+print(Absent_70)
+print(list(Absent_70)$Column)
+
+Present_50 <- Present_data_table[Present_data_table$PresentPercentage >= 50.0, ]
+cat(Present_50$Column)
+
+Absent_50 <- Present_data_table[Present_data_table$PresentPercentage < 50, ]
+print(list(Absent_50)$Column)
+
+Present_70 <- Present_data_table[Present_data_table$PresentPercentage >= 70.0, ]
+cat(Present_70$Column)
+
+Absent_30 <- Present_data_table[Present_data_table$PresentPercentage < 70, ]
+print(list(Absent_30$Column))
+
+```
+
+How much data (combined features) is missing per year? 
+
+```{r}
+
+NHISData$Year <- as.factor(NHISData$YEAR)
+
+total_obs_per_year <- table(NHISData$Year)
+
+missing_obs_per_year <- sapply(split(NHISData, NHISData$Year), function(year_data) {
+  sum(sapply(year_data, function(column) sum(is.na(column))))
+})
+
+total_data_points_per_year <- sapply(split(NHISData, NHISData$Year), function(year_data) {
+  nrow(year_data) * ncol(year_data)
+})
+
+missing_data_percentage_per_year <- (missing_obs_per_year / total_data_points_per_year) * 100
+
+missing_data_yearly_table <- data.frame(
+  Year = names(missing_data_percentage_per_year),
+  MissingDataPercentage = missing_data_percentage_per_year
+)
+
+print(missing_data_yearly_table)
+
+```
+
+Creating a new data frame that removes years with over a 70% missing percentage
+
+```{r}
+
+# Identify years with a missing data percentage over 70%
+years_to_exclude <- missing_data_yearly_table$Year[missing_data_yearly_table$MissingDataPercentage > 70]
+
+# Ensure 'Year' in NHISData is of type factor for accurate filtering
+NHISData$Year <- as.factor(NHISData$Year)
+
+# Create a new dataframe excluding the identified years
+NHISData_Cleaned <- NHISData[!NHISData$Year %in% years_to_exclude, ]
+
+unique(NHISData_Cleaned$YEAR)
+
+
+```
+
+Redo How much data is present
+
+```{r}
+
+missing_percentage <- sapply(NHISData, function(x) sum(is.na(x)) / length(x) * 100)
+
+Present_data_table <- data.frame(
+  Column = names(missing_percentage),
+  PresentPercentage = 100 - missing_percentage
+)
+
+print(Present_data_table)
+
+Present_30 <- Present_data_table[Present_data_table$PresentPercentage >= 30.0, ]
+print(Present_30)
+cat(Present_30$Column)
+nrow(Present_30)
+
+Absent_70 <- Present_data_table[Present_data_table$PresentPercentage < 30, ]
+print(Absent_70)
+print(list(Absent_70)$Column)
+
+Present_50 <- Present_data_table[Present_data_table$PresentPercentage >= 50.0, ]
+cat(Present_50$Column)
+
+Absent_50 <- Present_data_table[Present_data_table$PresentPercentage < 50, ]
+print(list(Absent_50)$Column)
+
+Present_70 <- Present_data_table[Present_data_table$PresentPercentage >= 70.0, ]
+cat(Present_70$Column)
+
+Absent_30 <- Present_data_table[Present_data_table$PresentPercentage < 70, ]
+cat(Absent_30$Column)
+
+```
