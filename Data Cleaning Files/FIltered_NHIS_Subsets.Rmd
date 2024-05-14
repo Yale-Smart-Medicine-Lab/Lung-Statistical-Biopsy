@@ -5,16 +5,17 @@ output: html_notebook
 
 ```{r}
 
-NHIS_Male <- read.csv("/Users/teresanguyen/Downloads/CleaningLungData/Data Files/male_NHISdata.csv")
+NHIS_Male <- read.csv("/Users/teresanguyen/Documents/Lung-Statistical-Biopsy/Data Files/male_NHISdata.csv")
 
-NHIS_Female <- read.csv("/Users/teresanguyen/Downloads/CleaningLungData/Data Files/female_NHISdata.csv")
+NHIS_Female <- read.csv("/Users/teresanguyen/Documents/Lung-Statistical-Biopsy/Data Files/female_NHISdata.csv")
 
 
 ```
 
 ```{r}
 
-threshold <- 0.70
+# Set the threshold value
+threshold <- 0.30
 
 # Function to find columns with enough data and always include specified columns
 find_columns_with_data <- function(data, threshold, always_include) {
@@ -32,18 +33,31 @@ find_columns_with_data <- function(data, threshold, always_include) {
 columns_with_data_male <- find_columns_with_data(NHIS_Male, threshold, "lung")
 columns_with_data_female <- find_columns_with_data(NHIS_Female, threshold, "lung")
 
-# Find common columns between male and female datasets
-common_columns <- intersect(columns_with_data_male, columns_with_data_female)
-
+# Print the columns with data for verification
 print(columns_with_data_male)
 print(columns_with_data_female)
 
+# Filter each dataset based on its own specific columns
+filtered_male <- NHIS_Male[, columns_with_data_male, drop = FALSE]
+filtered_female <- NHIS_Female[, columns_with_data_female, drop = FALSE]
+
 # Save the filtered datasets to new CSV files
-write.csv(filtered_male, "/Users/teresanguyen/Downloads/CleaningLungData/Data Files/male_filtered_70_NHIS.csv", row.names = FALSE)
-write.csv(filtered_female, "/Users/teresanguyen/Downloads/CleaningLungData/Data Files/female_filtered_70_NHIS.csv", row.names = FALSE)
+write.csv(filtered_male, "/Users/teresanguyen/Documents/Lung-Statistical-Biopsy/Data Files/male_filtered_30_NHIS.csv", row.names = FALSE)
+write.csv(filtered_female, "/Users/teresanguyen/Documents/Lung-Statistical-Biopsy/Data Files/female_filtered_30_NHIS.csv", row.names = FALSE)
 
 
 ```
+```{r}
+
+chosen_NHIS_male <- NHIS_Male[, c("age", "gender", "raceWh", "raceHis", "raceAs", "raceAI", "raceMis", "edlt8", "ed8t11", "ed12", "edphs", "edscol", "edcol", "edpcol", "marmar", "marwid", "mardiv", "marsep", "marnvm", "occwrk", "occune", "occret", "occoth", "bmi_curr", "arthrit_f", "bronchit_f", "diabetes_f", "emphys_f", "hearta_f", "hyperten_f", "liver_comorbidity", "stroke_f", "smoked_f", "cig_stat", "ibup", "lung_fh_age", "lung_fh_cnt", "trial_ph_any", "lung"), drop = FALSE]
+
+chosen_NHIS_female <- NHIS_Female[, c("age", "gender", "raceWh", "raceHis", "raceAs", "raceAI", "raceMis", "edlt8", "ed8t11", "ed12", "edphs", "edscol", "edcol", "edpcol", "marmar", "marwid", "mardiv", "marsep", "marnvm", "occwrk", "occune", "occret", "occoth", "bmi_curr", "arthrit_f", "bronchit_f", "diabetes_f", "emphys_f", "hearta_f", "hyperten_f", "liver_comorbidity", "stroke_f", "smoked_f", "cig_stat", "ibup", "lung_fh_age", "lung_fh_cnt", "trial_ph_any", "lung"), drop = FALSE]
+
+write.csv(chosen_NHIS_male, "/Users/teresanguyen/Documents/Lung-Statistical-Biopsy/Data Files/male_filtered_chosen_NHIS.csv", row.names = FALSE)
+write.csv(chosen_NHIS_female, "/Users/teresanguyen/Documents/Lung-Statistical-Biopsy/Data Files/female_filtered_chosen_NHIS.csv", row.names = FALSE)
+
+```
+
 
 ```{r}
 
