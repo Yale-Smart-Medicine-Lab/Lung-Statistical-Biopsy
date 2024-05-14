@@ -5,17 +5,22 @@ from sklearn.svm import SVC
 from sklearn.metrics import auc, roc_curve
 import matplotlib.pyplot as plt
 
-# Load in the data 
-plco_data = pd.read_csv('Data Files/PLCO_Female_Lung_Data_MAIN_imputed.csv')
-nhis_data = pd.read_csv('Data Files/female_filtered_70_NHIS_imputed.csv')
-ukb_data = pd.read_csv('Data Files/UKB_Female_Lung_Imputed_MAIN.csv')
-
-# Find the common featurs intersection between plco and NHIS 
-common_features = nhis_data.columns.intersection(plco_data.columns)
-
-# use only the features present in NHIS
-X_plco = plco_data[common_features]
+# Load the PLCO data
+plco_data = pd.read_csv('Data Files/PLCO_Female_Lung_Data_MAIN_imputed.csv') 
 y_plco = plco_data['lung']
+X_plco = plco_data.drop(columns=['lung'])
+
+# Load NHIS data to determine common features
+nhis_data = pd.read_csv('Data Files/female_filtered_70_NHIS_imputed.csv')
+X_nhis = nhis_data.drop(columns=['lung'])
+y_nhis = nhis_data['lung']
+
+# Determine common features excluding the target
+common_features = X_nhis.columns.intersection(X_plco.columns)
+
+# Apply common features to both datasets
+X_plco = X_plco[common_features]
+X_nhis = X_nhis[common_features]
 
 # split the plco data for training and testing
 X_train, X_test, y_train, y_test = train_test_split(X_plco, y_plco, test_size=0.3, stratify=y_plco)
@@ -44,8 +49,9 @@ plt.savefig('PLCO_female_lung_ROC_SVM_shallow.png', dpi=300, bbox_inches='tight'
 plt.show()
 
 # UK Biobank data
-X_ukb = ukb_data[common_features]
-y_ukb = ukb_data['lung']
+UKB_data = pd.read_csv('Data Files/UKB_Female_Lung_Imputed_MAIN.csv')
+X_ukb = UKB_data[common_features]
+y_ukb = UKB_data['lung']
 
 # Testing on UK Biobank Data
 y_pred_ukb = model.predict(X_ukb)
@@ -61,7 +67,6 @@ plt.savefig('UKB_female_lung_ROC_SVM_shallow.png', dpi=300, bbox_inches='tight')
 plt.show()
 
 # NHIS data
-X_nhis = nhis_data[common_features]
 y_nhis = nhis_data['lung']
 y_pred_nhis = model.predict(X_nhis)
 fpr_nhis, tpr_nhis, _ = roc_curve(y_nhis, y_pred_nhis)
