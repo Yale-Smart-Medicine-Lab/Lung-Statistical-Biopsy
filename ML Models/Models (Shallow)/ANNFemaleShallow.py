@@ -13,7 +13,9 @@ X_plco = plco_data.drop(columns=['lung'])
 print(f"Number of entries in PLCO data: {plco_data.shape[0]}")
 
 # Load NHIS data to determine common features, separate target
-nhis_data = pd.read_csv('Data Files/female_filtered_70_NHIS_imputed.csv')
+# nhis_data = pd.read_csv('Data Files/female_filtered_70_NHIS_imputed.csv')
+# nhis_data = pd.read_csv('Data Files/NHIS_female_30_mean_imputed_data.csv')
+nhis_data = pd.read_csv('Data Files/NHIS_female_chosen_mean_imputed_data.csv')
 y_nhis = nhis_data['lung']
 X_nhis = nhis_data.drop(columns=['lung'])
 common_features = X_nhis.columns.intersection(X_plco.columns)

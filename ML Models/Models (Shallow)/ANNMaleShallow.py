@@ -10,7 +10,10 @@ from sklearn.model_selection import train_test_split
 plco_data = pd.read_csv('Data Files/PLCO_Male_Lung_Data_MAIN_imputed.csv')
 
 # Load NHIS data to determine common features
-nhis_data = pd.read_csv('Data Files/male_filtered_70_NHIS_imputed.csv')
+# nhis_data = pd.read_csv('Data Files/male_filtered_70_NHIS_imputed.csv')
+#nhis_data = pd.read_csv('Data Files/NHIS_male_30_mean_imputed_data.csv')
+nhis_data = pd.read_csv('Data Files/NHIS_male_chosen_mean_imputed_data.csv')
+
 
 # Ensure 'lung' is the target and not part of the features
 if 'lung' in plco_data.columns:
