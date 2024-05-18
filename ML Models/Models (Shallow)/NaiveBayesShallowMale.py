@@ -25,7 +25,7 @@ X_plco = X_plco[common_features]
 X_nhis = X_nhis[common_features]
 
 # split the plco data for training and testing
-X_train, X_test, y_train, y_test = train_test_split(X_plco, y_plco, test_size=0.3, stratify=y_plco)
+X_train, X_test, y_train, y_test = train_test_split(X_plco, y_plco, test_size=0.2, stratify=y_plco)
 
 # Naive Bayes model
 model = GaussianNB()

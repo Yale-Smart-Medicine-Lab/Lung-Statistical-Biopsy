@@ -12,8 +12,8 @@ X_plco = plco_data.drop(columns=['lung'])
 
 # Load NHIS data to determine common features
 # nhis_data = pd.read_csv('Data Files/male_filtered_70_NHIS_imputed.csv')
-# nhis_data = pd.read_csv('Data Files/NHIS_male_30_mean_imputed_data.csv')
-nhis_data = pd.read_csv('Data Files/NHIS_male_chosen_mean_imputed_data.csv')
+nhis_data = pd.read_csv('Data Files/NHIS_male_30_mean_imputed_data.csv')
+# nhis_data = pd.read_csv('Data Files/NHIS_male_chosen_mean_imputed_data.csv')
 
 
 X_nhis = nhis_data.drop(columns=['lung'])
