@@ -9,7 +9,7 @@ Load the data into the notebook.
 
 ```{r}
 
-NHISdata <- read.csv("/Users/teresanguyen/Documents/Lung Statistical Biopsy/Data Files/NHISdata_1997_2022.csv")
+NHISdata <- read.csv("/Users/teresanguyen/Documents/Lung-Statistical-Biopsy/Data Files/NHISdata_1997_2022.csv")
 
 dim(NHISdata)
 colnames(NHISdata)
@@ -21,7 +21,9 @@ colnames(NHISdata)
 ```{r}
 
 library(dplyr)
-NHIS_Edit <- NHISdata %>% select(-YEAR, -SERIAL, -STRATA, -PSU, -NHISHID, -HHWEIGHT, -PERNUM, -NHISPID, -HHX, -FMX, -PX, -PERWEIGHT, -SAMPWEIGHT, -LONGWEIGHT, -PARTWEIGHT, -FWEIGHT, -SUPP1WT, -SUPP2WT, -ASTATFLG, -CSTATFLG)
+NHIS_Edit <- NHISdata %>% 
+  select(-YEAR, -SERIAL, -STRATA, -PSU, -NHISHID, -HHWEIGHT, -PERNUM, -NHISPID, -HHX, -FMX, -PX, -PERWEIGHT, -SAMPWEIGHT, -LONGWEIGHT, -PARTWEIGHT, -FWEIGHT, -SUPP1WT, -SUPP2WT, -ASTATFLG, -CSTATFLG) %>%
+  filter(AGE >= 18)
 
 colnames(NHIS_Edit)
 number_of_features <- ncol(NHIS_Edit)
@@ -30,6 +32,7 @@ colnames(NHIS_Edit) <- tolower(colnames(NHIS_Edit))
 
 # age
 NHIS_Edit$age <- NHIS_Edit$age / 100
+
 
 # gender: 0 = Male | 1 = Female
 NHIS_Edit$gender <- NHIS_Edit$sex - 1
@@ -555,10 +558,10 @@ writeDataFiles <- function(data) {
   female_only_columns <- c('hyster_f', 'hystera', 'ovaries_f', 'bcontr_f', 'curhorm', 'horm_f', 'thorm', 'livec', 'preg_f', 'fmenstr', 'bbd', 'benign_ovcyst', 'uterine_fib')
   
   male_data <- data[data$gender == 0, !(names(data) %in% female_only_columns)]
-  write.csv(male_data, 'male_NHISdata.csv', row.names = FALSE)
+  write.csv(male_data, 'male_NHISdataEdit.csv', row.names = FALSE)
   
   female_data <- data[data$gender == 1, !names(data) %in% male_only_columns]
-  write.csv(female_data, 'female_NHISdata.csv', row.names = FALSE)
+  write.csv(female_data, 'female_NHISdataEdit.csv', row.names = FALSE)
 }
 
 writeDataFiles(cleanedData)
