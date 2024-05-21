@@ -1,9 +1,9 @@
 import pandas as pd
 from sklearn.impute import KNNImputer
 
-fileNames = ['Data Files/male_filtered_70_NHIS', 'Data Files/female_filtered_70_NHIS.csv', 
-             'Data Files/female_filtered_30_NHIS.csv', 'Data Files/male_filtered_30_NHIS.csv', 
-             'Data Files/female_filtered_chosen_NHIS.csv', 'Data Files/male_filtered_chosen_NHIS.csv']
+fileNames = ['Data Files/female_filtered_70_NHIS', 
+             'Data Files/female_filtered_30_NHIS', 'Data Files/male_filtered_30_NHIS', 
+             'Data Files/female_filtered_chosen_NHIS', 'Data Files/male_filtered_chosen_NHIS']
 suffix = '_imputed'
 ext = '.csv'
 
@@ -18,3 +18,4 @@ for fileName in fileNames:
     imputed_data = imputer.fit_transform(data)
     imputed_data = pd.DataFrame(imputed_data, columns=columns_to_keep)
     imputed_data.to_csv(fileName + suffix + ext, index=False)
+    print(f"Imputed data saved to '{fileName + suffix + ext}'.")

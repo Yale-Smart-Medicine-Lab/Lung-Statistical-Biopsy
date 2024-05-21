@@ -3,6 +3,8 @@ title: "NHIS Subsections"
 output: html_notebook
 ---
 
+Read in the data.
+
 ```{r}
 
 NHIS_Male <- read.csv("/Users/teresanguyen/Documents/Lung-Statistical-Biopsy/Data Files/male_NHISdata.csv")
@@ -12,10 +14,12 @@ NHIS_Female <- read.csv("/Users/teresanguyen/Documents/Lung-Statistical-Biopsy/D
 
 ```
 
+70% NHIS 
+
 ```{r}
 
 # Set the threshold value
-threshold <- 0.30
+threshold <- 0.70
 
 # Function to find columns with enough data and always include specified columns
 find_columns_with_data <- function(data, threshold, always_include) {
@@ -42,11 +46,37 @@ filtered_male <- NHIS_Male[, columns_with_data_male, drop = FALSE]
 filtered_female <- NHIS_Female[, columns_with_data_female, drop = FALSE]
 
 # Save the filtered datasets to new CSV files
-write.csv(filtered_male, "/Users/teresanguyen/Documents/Lung-Statistical-Biopsy/Data Files/male_filtered_30_NHIS.csv", row.names = FALSE)
-write.csv(filtered_female, "/Users/teresanguyen/Documents/Lung-Statistical-Biopsy/Data Files/female_filtered_30_NHIS.csv", row.names = FALSE)
+write.csv(filtered_male, "/Users/teresanguyen/Documents/Lung-Statistical-Biopsy/Data Files/male_filtered_70_NHIS.csv", row.names = FALSE)
+write.csv(filtered_female, "/Users/teresanguyen/Documents/Lung-Statistical-Biopsy/Data Files/female_filtered_70_NHIS.csv", row.names = FALSE)
 
 
 ```
+
+30% NHIS 
+
+```{r}
+
+# Set the threshold value
+threshold2 <- 0.30
+
+# Use the function to find columns for male and female datasets, always including "lung"
+columns_with_data_male2 <- find_columns_with_data(NHIS_Male, threshold2, "lung")
+columns_with_data_female2 <- find_columns_with_data(NHIS_Female, threshold2, "lung")
+
+# Print the columns with data for verification
+print(columns_with_data_male2)
+print(columns_with_data_female2)
+
+# Filter each dataset based on its own specific columns
+filtered_male2 <- NHIS_Male[, columns_with_data_male2, drop = FALSE]
+filtered_female2 <- NHIS_Female[, columns_with_data_female2, drop = FALSE]
+
+# Save the filtered datasets to new CSV files
+write.csv(filtered_male2, "/Users/teresanguyen/Documents/Lung-Statistical-Biopsy/Data Files/male_filtered_30_NHIS.csv", row.names = FALSE)
+write.csv(filtered_female2, "/Users/teresanguyen/Documents/Lung-Statistical-Biopsy/Data Files/female_filtered_30_NHIS.csv", row.names = FALSE)
+
+```
+
 ```{r}
 
 chosen_NHIS_male <- NHIS_Male[, c("age", "gender", "raceWh", "raceHis", "raceAs", "raceAI", "raceMis", "edlt8", "ed8t11", "ed12", "edphs", "edscol", "edcol", "edpcol", "marmar", "marwid", "mardiv", "marsep", "marnvm", "occwrk", "occune", "occret", "occoth", "bmi_curr", "arthrit_f", "bronchit_f", "diabetes_f", "emphys_f", "hearta_f", "hyperten_f", "liver_comorbidity", "stroke_f", "smoked_f", "cig_stat", "ibup", "lung_fh_age", "lung_fh_cnt", "trial_ph_any", "lung"), drop = FALSE]
@@ -79,3 +109,17 @@ print(female_lung_counts)
 
 ```
 
+
+After removing all surveys less than 18 years old.
+
+```{r}
+
+NHISFemaleImput <- read.csv("/Users/teresanguyen/Documents/Lung-Statistical-Biopsy/Data Files/female_filtered_70_NHIS_imputed.csv")
+
+dim(NHISFemaleImput)
+
+NHISFemaleBefore <- read.csv("/Users/teresanguyen/Documents/Lung-Statistical-Biopsy/Data Files/female_filtered_70_NHIS.csv")
+
+dim(NHISFemaleBefore)
+
+```

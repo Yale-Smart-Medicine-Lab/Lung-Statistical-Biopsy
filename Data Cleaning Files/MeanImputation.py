@@ -2,9 +2,9 @@ import pandas as pd
 import numpy as np
 from sklearn.impute import SimpleImputer
 
-fileNames = ['Data Files/male_filtered_70_NHIS', 'Data Files/female_filtered_70_NHIS.csv', 
-             'Data Files/female_filtered_30_NHIS.csv', 'Data Files/male_filtered_30_NHIS.csv', 
-             'Data Files/female_filtered_chosen_NHIS.csv', 'Data Files/male_filtered_chosen_NHIS.csv']
+fileNames = ['Data Files/male_filtered_70_NHIS', 'Data Files/female_filtered_70_NHIS', 
+             'Data Files/female_filtered_30_NHIS', 'Data Files/male_filtered_30_NHIS', 
+             'Data Files/female_filtered_chosen_NHIS', 'Data Files/male_filtered_chosen_NHIS']
 suffix = '_mean_imputed'
 ext = '.csv'
 
