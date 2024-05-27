@@ -66,18 +66,22 @@ plt.show()
 cancers = ['lung']
 data = pd.read_csv('Data Files/UKB_Female_Lung_Imputed_MAIN.csv')
 
-# Assuming 'lung' column contains the target variable
-
-x = data[X.columns]
+# Ensure features used match the training set
+x = data.drop(columns=['lung'])  # Explicitly drop the target column
 
 # Predict using the trained model
+# Assuming data is your UK Biobank dataframe
+required_features = X_train.columns  # Features used in training
+x = data[required_features]  # Ensuring only these features are used for prediction
+
+# Now you can predict using the trained model
 y_pred = model.predict(x)
 
-plt.figure(1, figsize=(6, 6))
-plt.plot([0, 1], [0, 1], 'k--')
-for i in np.arange(len(cancers)):
-    fpr, tpr, thresholds = roc_curve(data['lung'], y_pred[:, i])
-    plt.plot(fpr, tpr, label=cancers[i] + ('(auc = {:.3f})'.format(auc(fpr, tpr))))
+# Plot ROC curve for UK Biobank data
+plt.figure(figsize=(6, 6))
+plt.plot([0, 1], [0, 1], 'k--')  # Baseline diagonal
+fpr, tpr, thresholds = roc_curve(data['lung'], y_pred)
+plt.plot(fpr, tpr, label='lung (auc = {:.3f})'.format(auc(fpr, tpr)))
 plt.xlabel('False positive rate (Specificity)')
 plt.ylabel('True positive rate (Sensitivity)')
 plt.title('Female Lung Cancer UK Biobank Testing: ROC curve')

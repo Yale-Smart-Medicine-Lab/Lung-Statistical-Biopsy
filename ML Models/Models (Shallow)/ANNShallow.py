@@ -115,5 +115,3 @@ train_and_evaluate_model('female',
                          plot_color='green')
 
 
-
-

@@ -6,7 +6,7 @@ from sklearn.metrics import auc, roc_curve
 import matplotlib.pyplot as plt
 
 # Load data
-data = pd.read_csv('Male_Lung_Data_Greg_imputed.csv')
+data = pd.read_csv('Data Files/PLCO_male_Lung_Data_MAIN_imputed.csv')
 
 # Separate features and target
 X = data.drop(columns=['lung'])
@@ -30,7 +30,7 @@ y_pred_proba = model.predict_proba(X_test)[:, 1]  # Probability of positive clas
 fpr, tpr, thresholds = roc_curve(y_test, y_pred_proba)
 plt.figure(figsize=(6, 6))
 plt.plot([0, 1], [0, 1], 'k--')
-plt.plot(fpr, tpr, label='lung (AUC = {:.3f})'.format(auc(fpr, tpr)))
+plt.plot(fpr, tpr, label='lung (AUC = {:.3f})'.format(auc(fpr, tpr)), color='orange')
 plt.xlabel('False positive rate (Specificity)')
 plt.ylabel('True positive rate (Sensitivity)')
 plt.title('PLCO Male: ROC curve (Logistic Regression)')
@@ -39,10 +39,10 @@ plt.savefig('male_lung_ROC_logistic.png', dpi=300, bbox_inches='tight')
 plt.show()
 
 # Load UKB data
-ukb_data = pd.read_csv('Data Files/imputedMaleDataGreg2.csv')
+ukb_data = pd.read_csv('Data Files/UKB_male_Lung_Imputed_MAIN.csv')
 
 # Assuming 'lung' column contains the target variable
-x_ukb = ukb_data[X.columns]  # Assuming 'X' contains the same features as 'X_train'
+x_ukb = ukb_data[X.columns]
 
 # Predict using the trained model
 y_pred_ukb_proba = model.predict_proba(x_ukb)[:, 1]
@@ -50,7 +50,7 @@ y_pred_ukb_proba = model.predict_proba(x_ukb)[:, 1]
 plt.figure(figsize=(6, 6))
 plt.plot([0, 1], [0, 1], 'k--')
 fpr_ukb, tpr_ukb, thresholds_ukb = roc_curve(ukb_data['lung'], y_pred_ukb_proba)
-plt.plot(fpr_ukb, tpr_ukb, label='lung (AUC = {:.3f})'.format(auc(fpr_ukb, tpr_ukb)))
+plt.plot(fpr, tpr, label='lung (AUC = {:.3f})'.format(auc(fpr, tpr)), color='orange')
 plt.xlabel('False positive rate (Specificity)')
 plt.ylabel('True positive rate (Sensitivity)')
 plt.title('Male Lung Cancer UK Biobank Testing: ROC curve (Logistic Regression)')

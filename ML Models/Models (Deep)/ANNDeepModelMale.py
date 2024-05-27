@@ -7,7 +7,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import auc, roc_curve
 
 # Load data
-data = pd.read_csv('Male_Lung_Data_Greg_imputed.csv')
+data = pd.read_csv('Data Files/PLCO_male_Lung_Data_MAIN_imputed.csv')
 
 # Separate features and target
 X = data.drop(columns=['lung'])
@@ -57,29 +57,29 @@ plt.plot([0, 1], [0, 1], 'k--')
 plt.plot(fpr, tpr, label='lung (AUC = {:.3f})'.format(auc(fpr, tpr)))
 plt.xlabel('False positive rate (Specificity)')
 plt.ylabel('True positive rate (Sensitivity)')
-plt.title('PLCO Male: ROC curve (Neural Network)')
+plt.title('Male Lung Cancer PLCO: ROC curve (Neural Network)')
 plt.legend(loc='lower right')
 plt.savefig('male_lung_ROC.png', dpi=300, bbox_inches='tight')
 plt.show()
 
 # Load UKB data
 cancers = ['lung']
-data = pd.read_csv('Data Files/imputedMaleDataGreg2.csv')
+data = pd.read_csv('Data Files/UKB_male_Lung_Imputed_MAIN.csv')
 
-# Assuming 'lung' column contains the target variable
-# Convert the target variable to binary
-#data['lung'] = (data['lung'] == 1).astype(int)
-
-x = data[X.columns]  # Assuming 'X' contains the same features as 'x_train'
+# Ensure features used match the training set
+x = data.drop(columns=['lung'])
 
 # Predict using the trained model
+required_features = X_train.columns  
+x = data[required_features]
+
 y_pred = model.predict(x)
 
-plt.figure(1, figsize=(6, 6))
+# Plot ROC curve for UK Biobank data
+plt.figure(figsize=(6, 6))
 plt.plot([0, 1], [0, 1], 'k--')
-for i in np.arange(len(cancers)):
-    fpr, tpr, thresholds = roc_curve(data['lung'], y_pred[:, i])  # Ensure 'lung' is binary
-    plt.plot(fpr, tpr, label=cancers[i] + ('(auc = {:.3f})'.format(auc(fpr, tpr))))
+fpr, tpr, thresholds = roc_curve(data['lung'], y_pred)
+plt.plot(fpr, tpr, label='lung (auc = {:.3f})'.format(auc(fpr, tpr)))
 plt.xlabel('False positive rate (Specificity)')
 plt.ylabel('True positive rate (Sensitivity)')
 plt.title('Male Lung Cancer UK Biobank Testing: ROC curve')
