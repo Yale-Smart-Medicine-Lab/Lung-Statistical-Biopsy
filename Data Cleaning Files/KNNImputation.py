@@ -17,3 +17,4 @@ for fileName in fileNames:
     imputed_data = imputer.fit_transform(data)
     imputed_data = pd.DataFrame(imputed_data, columns=columns_to_keep)
     imputed_data.to_csv(fileName + suffix + ext, index=False)
+    print(f"Imputed data saved to '{fileName + suffix + ext}'.")

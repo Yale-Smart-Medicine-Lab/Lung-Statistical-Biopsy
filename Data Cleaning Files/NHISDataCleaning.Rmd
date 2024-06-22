@@ -9,7 +9,7 @@ Load the data into the notebook.
 
 ```{r}
 
-NHISdata <- read.csv("/Users/teresanguyen/Documents/Lung Statistical Biopsy/Data Files/NHISdata_1997_2022.csv")
+NHISdata <- read.csv("/Users/teresanguyen/Documents/Lung-Statistical-Biopsy/Data Files/NHISdata_1997_2022.csv")
 
 dim(NHISdata)
 colnames(NHISdata)
@@ -21,7 +21,9 @@ colnames(NHISdata)
 ```{r}
 
 library(dplyr)
-NHIS_Edit <- NHISdata %>% select(-YEAR, -SERIAL, -STRATA, -PSU, -NHISHID, -HHWEIGHT, -PERNUM, -NHISPID, -HHX, -FMX, -PX, -PERWEIGHT, -SAMPWEIGHT, -LONGWEIGHT, -PARTWEIGHT, -FWEIGHT, -SUPP1WT, -SUPP2WT, -ASTATFLG, -CSTATFLG)
+NHIS_Edit <- NHISdata %>% 
+  select(-YEAR, -SERIAL, -STRATA, -PSU, -NHISHID, -HHWEIGHT, -PERNUM, -NHISPID, -HHX, -FMX, -PX, -PERWEIGHT, -SAMPWEIGHT, -LONGWEIGHT, -PARTWEIGHT, -FWEIGHT, -SUPP1WT, -SUPP2WT, -ASTATFLG, -CSTATFLG) %>%
+  filter(AGE >= 18)
 
 colnames(NHIS_Edit)
 number_of_features <- ncol(NHIS_Edit)
@@ -30,6 +32,7 @@ colnames(NHIS_Edit) <- tolower(colnames(NHIS_Edit))
 
 # age
 NHIS_Edit$age <- NHIS_Edit$age / 100
+
 
 # gender: 0 = Male | 1 = Female
 NHIS_Edit$gender <- NHIS_Edit$sex - 1
@@ -518,12 +521,12 @@ cleanedData <- data.frame(
   emphys_f = NHIS_Edit$emphys_f,
   hearta_f = NHIS_Edit$hearta_f,
   hyperten_f = NHIS_Edit$hyperten_f,
-  liver_comorbidity = NHIS_Edit$liver_comorbidity,
+  liver_comorb = NHIS_Edit$liver_comorb,
   osteopor_f = NHIS_Edit$osteopor_f,
   polyps_f = NHIS_Edit$polyps_f,
   stroke_f = NHIS_Edit$stroke_f,
-  smoked_f = NHIS_Edit$smoked_f,
-  cig_stat = NHIS_Edit$cig_stat,
+  SMKEV = NHIS_Edit$smoked_f,
+  SMKNOW = NHIS_Edit$cig_stat,
   asp = NHIS_Edit$asp,
   ibup = NHIS_Edit$ibup,
   lung_fh_age = NHIS_Edit$lung_fh_age,

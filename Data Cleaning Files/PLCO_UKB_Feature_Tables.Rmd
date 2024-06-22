@@ -1,0 +1,390 @@
+---
+title: "PLCO and UK Biobank Tables"
+output: html_notebook
+---
+
+Download all the necessary libraries
+
+```{r}
+
+library(dplyr)
+library(tidyr)
+library(stringr)
+
+```
+
+PLCO data for females
+
+```{r}
+
+PLCO_female <- read.csv('/Users/teresanguyen/Documents/Lung-Statistical-Biopsy/Data Files/PLCO_female_Lung_Data_MAIN_imputed.csv')
+UKB_female <- read.csv('/Users/teresanguyen/Documents/Lung-Statistical-Biopsy/Data Files/UKB_female_Lung_Imputed_MAIN.csv')
+dim(PLCO_female)
+dim(UKB_female)
+colnames(PLCO_female)
+colnames(UKB_female)
+
+# remove the "gender" column
+PLCO_female <- PLCO_female[, !colnames(PLCO_female) %in% "gender"]
+UKB_female <- PLCO_female[, !colnames(PLCO_female) %in% "gender"]
+
+variables_to_keep <- c("age", "raceWh", "raceBl", "raceHis", "raceAs", "racePI",
+                       "raceAI", "raceMis", "edlt8", "ed8t11", "ed12", "edphs", "edscol",
+                       "edcol", "edpcol", "marmar", "marwid", "mardiv", "marsep", "marnvm",
+                       "occhmk", "occwrk", "occune", "occret", "occesl", "occdis", "occoth",
+                       "bmi_curr", "weight20_f", "arthrit_f", "bronchit_f", "colon_comorb",
+                       "diabetes_f", "divertic_f", "emphys_f", "gallblad_f", "hearta_f",
+                       "hyperten_f", "liver_comorb", "osteopor_f", "polyps_f", "stroke_f",
+                       "SMKEV", "SMKNOW", "cig_stop", "pack_years", "asppd", "ibuppd",
+                       "lung_fh", "lung_fh_age", "trial_ph_lung", "lung_is_first_dx",
+                       "hystera", "ovariesr_f", "tuballig", "bcontr_f", "bcontra", "curhorm",
+                       "horm_f", "thorm", "fchilda", "livec", "miscar", "preg_f", "stillb",
+                       "trypreg", "tubal", "fmenstr", "bbd", "benign_ovcyst", "endometriosis",
+                       "uterine_fib", "lung")
+
+# Select only the specified variables from the dataframe
+UKB_female <- UKB_female %>%
+  select(all_of(variables_to_keep))
+
+colnames(UKB_female)
+
+
+
+new_names <- c("Age", "White", "Black", "Hispanic", "Asian", "Pacific Islander", "American Indian", "Miscenallious Race",
+               "Less than 8 years of education", "8-11 years of education", "12 years of education or completed high school",
+               "Post high school training", "Some college", "College graduate", "Post graduate",
+               "Married or living as married", "Widowed", "Divorced", "Separated", "Never married",
+               "Homemaker", "Working", "Unemployed", "Retired", "Extended or sick leave", "Disabled", "Other employment status",
+               "Body Mass Index", "Weight at Age 20", "Arthritis", "Bronchitis",
+               "Colon comorbidity (ulcerative colitis, Crohn's disease, Gardner's syndrome, or familial polyposis)", "Diabetes",
+               "Diverticulitis or diverticulosis", "Emphysema", "Gall bladder stones or inflammation", "Heart disease or heart attack",
+               "High blood pressure", "Hepatitis or cirrhosis", "Osteoporosis", "Colorectal polyps", "Stroke",
+               "Smoked cigarettes regularly", "Current cigarette smoking status", "Number of years passed since the participant has stopped smoking",
+               "Number of packs smoked per day * years smoked", "Number of aspirin pills taken in the last 12 months",
+               "Number of ibuprofen products taken in the last 12 months", "Family history of lung cancer", "Age of youngest relative with lung cancer",
+               "Personal history of lung cancer prior to trial entry", "Lung cancer being the first diagnosed cancer",
+               "Ever had a hysterectomy", "Which ovaries removed", "Ever had tubes tied", "Ever take birth control pills",
+               "Age started birth control pills", "Currently using female hormones", "Ever take female hormones",
+               "Number of years taking female hormones", "Age at birth of first child", "Number of live births",
+               "Number of miscarriages/abortions", "Ever been pregnant", "Number of still birth pregnancies",
+               "Ever tried to become pregnant for a year or more without success", "Number of tubal/ectopic pregnancies",
+               "Age of first menstrual period", "Ever have benign or fibrocystic breast disease", "Ever have benign ovarian tumor/cyst",
+               "Ever have endometriosis", "Ever have uterine fibroid tumors", "lung")
+
+length(new_names)
+
+# Check if the number of new names matches the number of columns in the dataframe
+if(length(new_names) == length(colnames(PLCO_female))) {
+  # Rename the columns
+  colnames(PLCO_female) <- new_names
+  colnames(UKB_female) <- new_names
+} else {
+  cat("The number of new column names provided does not match the number of columns in the dataframe.\n")
+  cat("Number of columns in dataframe:", length(colnames(PLCO_female)), "\n")
+  cat("Number of names provided:", length(new_names), "\n")
+}
+
+
+```
+
+calculate the statistics for binary variables
+
+```{r}
+
+# Binary Variables
+binary_vars <- c(
+  "White", "Black", "Hispanic", "Asian", "Pacific Islander", "American Indian", "Miscenallious Race",
+  "Less than 8 years of education", "8-11 years of education", "12 years of education or completed high school",
+  "Post high school training", "Some college", "College graduate", "Post graduate",
+  "Married or living as married", "Widowed", "Divorced", "Separated", "Never married",
+  "Homemaker", "Working", "Unemployed", "Retired", "Extended or sick leave", "Disabled", "Other employment status",
+  "Arthritis", "Bronchitis", "Colon comorbidity (ulcerative colitis, Crohn's disease, Gardner's syndrome, or familial polyposis)",
+  "Diabetes", "Diverticulitis or diverticulosis", "Emphysema", "Gall bladder stones or inflammation",
+  "Heart disease or heart attack", "High blood pressure", "Hepatitis or cirrhosis", "Osteoporosis", "Colorectal polyps", "Stroke",
+  "Smoked cigarettes regularly", "Current cigarette smoking status", "Ever had a hysterectomy", "Ever had tubes tied", 
+  "Ever take birth control pills", "Currently using female hormones", "Ever take female hormones", "Ever been pregnant",
+  "Family history of lung cancer", "Personal history of lung cancer prior to trial entry", "Lung cancer being the first diagnosed cancer",
+  "Ever have benign or fibrocystic breast disease", "Ever have benign ovarian tumor/cyst", "Ever have endometriosis", "Ever have uterine fibroid tumors"
+)
+
+# Continuous Variables
+continuous_vars <- c(
+  "Age", "Body Mass Index", "Weight at Age 20", "Number of years passed since the participant has stopped smoking",
+  "Number of packs smoked per day * years smoked", "Number of aspirin pills taken in the last 12 months",
+  "Number of ibuprofen products taken in the last 12 months", "Age of youngest relative with lung cancer",
+  "Number of years taking female hormones", "Age at birth of first child", "Number of live births",
+  "Number of miscarriages/abortions", "Number of still birth pregnancies", "Number of tubal/ectopic pregnancies",
+  "Age of first menstrual period", "Which ovaries removed", "Age started birth control pills"
+)
+
+
+calculate_stats <- function(data, binary_vars, continuous_vars) {
+  binary_stats <- data %>%
+    select(lung, all_of(binary_vars)) %>%
+    pivot_longer(cols = -lung, names_to = "variable", values_to = "value") %>%
+    group_by(variable, lung) %>%
+    summarize(Percentage = mean(value, na.rm = TRUE) * 100, .groups = 'drop') %>%
+    mutate(Percentage = sprintf("%.1f%%", Percentage))
+
+  continuous_stats <- data %>%
+    select(lung, all_of(continuous_vars)) %>%
+    group_by(lung) %>%
+    summarize(across(everything(), list(mean = ~ mean(., na.rm = TRUE), sd = ~ sd(., na.rm = TRUE)))) %>%
+    pivot_longer(cols = -lung, names_to = "variable", values_to = "value") %>%
+    mutate(variable = str_replace(variable, "_mean", ""),
+           variable = str_replace(variable, "_sd", "")) %>%
+    group_by(variable, lung) %>%
+    summarize(formatted_value = sprintf("%.1f ± %.1f", first(value), last(value)), .groups = 'drop')
+
+  full_join(binary_stats, continuous_stats, by = c("variable", "lung"))
+}
+
+all_stats_PLCO <- calculate_stats(PLCO_female, binary_vars, continuous_vars)
+all_stats_UKB <- calculate_stats(UKB_female, binary_vars, continuous_vars)
+
+combine_and_format <- function(stats) {
+  stats %>%
+    pivot_wider(names_from = lung, values_from = c(Percentage, formatted_value), names_glue = "{.value} ({lung})") %>%
+    mutate(`Lung Cancer` = coalesce(`formatted_value (1)`, `Percentage (1)`),
+           `Non-Cancer` = coalesce(`formatted_value (0)`, `Percentage (0)`)) %>%
+    select(Variable = variable, `Lung Cancer`, `Non-Cancer`)
+}
+
+final_table_PLCO <- combine_and_format(all_stats_PLCO)
+final_table_UKB <- combine_and_format(all_stats_UKB)
+
+# Merge the final tables
+final_combined_table <- left_join(final_table_PLCO, final_table_UKB, by = "Variable", suffix = c("_PLCO", "_UKB"))
+
+
+ordered_variables <- c(
+  "Age", "White", "Black", "Hispanic", "Asian", "Pacific Islander", "American Indian", "Miscenallious Race",
+  "Less than 8 years of education", "8-11 years of education", "12 years of education or completed high school",
+  "Post high school training", "Some college", "College graduate", "Post graduate",
+  "Married or living as married", "Widowed", "Divorced", "Separated", "Never married",
+  "Homemaker", "Working", "Unemployed", "Retired", "Extended or sick leave", "Disabled", "Other employment status",
+  "Body Mass Index", "Weight at Age 20", "Arthritis", "Bronchitis",
+  "Colon comorbidity (ulcerative colitis, Crohn's disease, Gardner's syndrome, or familial polyposis)", "Diabetes",
+  "Diverticulitis or diverticulosis", "Emphysema", "Gall bladder stones or inflammation", "Heart disease or heart attack",
+  "High blood pressure", "Hepatitis or cirrhosis", "Osteoporosis", "Colorectal polyps", "Stroke",
+  "Smoked cigarettes regularly", "Current cigarette smoking status",
+  "Number of years passed since the participant has stopped smoking", "Number of packs smoked per day *years smoked",
+  "Number of aspirin pills taken in the last 12 months", "Number of ibuprofen products taken in the last 12 months",
+  "Family history of lung cancer", "Age of youngest relative with lung cancer",
+  "Personal history of lung cancer prior to trial entry", "Lung cancer being the first diagnosed cancer",
+  "Ever had a hysterectomy", "Which ovaries removed", "Ever had tubes tied",
+  "Ever take birth control pills", "Age started birth control pills",
+  "Currently using female hormones", "Ever take female hormones", "Number of years taking female hormones",
+  "Age at birth of first child", "Number of live births",
+  "Number of miscarriages/abortions", "Ever been pregnant", "Number of still birth pregnancies",
+  "Ever tried to become pregnant for a year or more without success", "Number of tubal/ectopic pregnancies",
+  "Age of first menstrual period", "Ever have benign or fibrocystic breast disease",
+  "Ever have benign ovarian tumor/cyst", "Ever have endometriosis", "Ever have uterine fibroid tumors"
+)
+
+# Create a vector representing the type of each variable, matching the order and length of your variables list
+type_of_variable <- c("Continuous", "Binary", "Binary", "Binary", "Binary", "Binary", 
+                      "Binary", "Binary", "Binary", "Binary", "Binary", "Binary", 
+                      "Binary", "Binary", "Binary", "Binary", "Binary", "Binary", 
+                      "Binary", "Binary", "Binary", "Binary", "Binary", "Binary", 
+                      "Binary", "Binary", "Continuous", "Continuous", "Binary", "Binary", 
+                      "Binary", "Binary", "Binary", "Binary", "Binary", "Binary", 
+                      "Binary", "Binary", "Binary", "Binary", "Binary", "Binary", "Binary", 
+                      "Continuous", "Continuous", "Continuous", "Continuous", "Binary", 
+                      "Continuous", "Binary", "Binary", "Binary", "Continuous", "Binary", 
+                      "Binary", "Continuous", "Binary", "Binary", "Continuous", "Continuous", 
+                      "Continuous", "Continuous", "Binary", "Continuous", "Binary", 
+                      "Continuous", "Continuous", "Binary", "Binary", "Binary", "Binary")
+
+final_combined_table <- final_combined_table %>%
+  mutate(Type_of_Variable = type_of_variable) %>%
+  relocate(Type_of_Variable, .before = 1)
+
+# Print the final combined table to verify
+print(final_combined_table)
+
+# write.csv(final_combined_table, "Final_Combined_Statistics_Table_UKB_PLCO_FEMALE.csv", row.names = FALSE)
+
+
+```
+
+
+
+```{r}
+
+PLCO_male <- read.csv('/Users/teresanguyen/Documents/Lung-Statistical-Biopsy/Data Files/PLCO_male_Lung_Data_MAIN_imputed.csv')
+UKB_male <- read.csv('/Users/teresanguyen/Documents/Lung-Statistical-Biopsy/Data Files/UKB_male_Lung_Imputed_MAIN.csv')
+
+dim(PLCO_male)
+colnames(PLCO_male)
+dim(UKB_male)
+
+# remove the "gender" column
+PLCO_male <- PLCO_male[, !colnames(PLCO_male) %in% "gender"]
+UKB_male <- PLCO_male[, !colnames(PLCO_male) %in% "gender"]
+
+variables_to_keep_male <- c(
+  "age", "raceWh", "raceBl", "raceHis", "raceAs", "racePI", "raceAI",
+  "raceMis", "edlt8", "ed8t11", "ed12", "edphs", "edscol", "edcol", "edpcol",
+  "marmar", "marwid", "mardiv", "marsep", "marnvm", "occhmk", "occwrk", "occune",
+  "occret", "occesl", "occdis", "occoth", "bmi_curr", "weight20_f", "arthrit_f",
+  "bronchit_f", "colon_comorb", "diabetes_f", "divertic_f", "emphys_f", "gallblad_f",
+  "hearta_f", "hyperten_f", "liver_comorb", "osteopor_f", "polyps_f", "stroke_f",
+  "SMKEV", "SMKNOW", "cig_stop", "pack_years", "asppd", "ibuppd", "lung_fh",
+  "lung_fh_age", "trial_ph_lung", "lung_is_first_dx", "enlpros_f", "enlprosa",
+  "infpros_f", "infprosa", "urinate_f", "urinatea", "surg_age", "surg_biopsy",
+  "surg_prostatectomy", "surg_resection", "vasect_f", "vasecta", "lung"
+)
+
+length(variables_to_keep_male)
+
+
+UKB_male <- UKB_male %>%
+  select(all_of(variables_to_keep_male))
+
+colnames(UKB_male)
+
+variable_names_male <- c(
+  "Age",
+  "White",
+  "Black",
+  "Hispanic",
+  "Asian",
+  "Pacific Islander",
+  "American Indian",
+  "Miscenallious Race",
+  "Less than 8 years of education",
+  "8-11 years of education",
+  "12 years of education or completed high school",
+  "Post high school training",
+  "Some college",
+  "College graduate",
+  "Post graduate",
+  "Married or living as married",
+  "Widowed",
+  "Divorced",
+  "Separated",
+  "Never married",
+  "Homemaker",
+  "Working",
+  "Unemployed",
+  "Retired",
+  "Extended or sick leave",
+  "Disabled",
+  "Other employment status",
+  "Body Mass Index",
+  "Weight at Age 20",
+  "Arthritis",
+  "Bronchitis",
+  "Colon comorbidity (ulcerative colitis, Crohn's disease, Gardner's syndrome, or familial polyposis)",
+  "Diabetes",
+  "Diverticulitis or diverticulosis",
+  "Emphysema",
+  "Gall bladder stones or inflammation",
+  "Heart disease or heart attack",
+  "High blood pressure",
+  "Hepatitis or cirrhosis",
+  "Osteoporosis",
+  "Colorectal polyps",
+  "Stroke",
+  "Smoked cigarettes regularly",
+  "Current cigarette smoking status",
+  "Number of years passed since the participant has stopped smoking",
+  "Number of packs smoked per day *years smoked",
+  "Number of aspirin pills taken in the last 12 months",
+  "Number of ibuprofen products taken in the last 12 months",
+  "Family history of lung cancer",
+  "Age of youngest relative with lung cancer",
+  "Personal history of lung cancer prior to trial entry",
+  "Lung cancer being the first diagnosed cancer",
+  "Ever had enlarged prostate or BPH",
+  "Age of enlarged prostate or BPH",
+  "Ever had inflamed prostate",
+  "Age of inflamed prostate",
+  "Amount of times did the individual wake up to urinate at night",
+  "Age when the individual began to urinate more than once at night",
+  "Age at first prostate surgery",
+  "Ever had biopsy of prostate",
+  "Ever had prostatectomy for benign disease",
+  "Ever had transurethral resection or prostate",
+  "Had a vasectomy",
+  "Age at vasectomy",
+  "lung"
+)
+
+if(length(variable_names_male) == length(colnames(PLCO_male))) {
+  # Rename the columns
+  colnames(PLCO_male) <- variable_names_male
+  colnames(UKB_male) <- variable_names_male
+} else {
+  cat("The number of new column names provided does not match the number of columns in the dataframe.\n")
+  cat("Number of columns in dataframe:", length(colnames(PLCO_male)), "\n")
+  cat("Number of names provided:", length(variable_names_male), "\n")
+}
+
+```
+
+```{r}
+
+# Binary Variables
+binary_variables_male <- c(
+  "Age", "White", "Black", "Hispanic", "Asian", "Pacific Islander", "American Indian",
+  "Miscenallious Race", "Less than 8 years of education", "8-11 years of education",
+  "12 years of education or completed high school", "Post high school training",
+  "Some college", "College graduate", "Post graduate", "Married or living as married",
+  "Widowed", "Divorced", "Separated", "Never married", "Homemaker", "Working",
+  "Unemployed", "Retired", "Extended or sick leave", "Disabled", "Other employment status",
+  "Arthritis", "Bronchitis", "Colon comorbidity (ulcerative colitis, Crohn's disease, Gardner's syndrome, or familial polyposis)",
+  "Diabetes", "Diverticulitis or diverticulosis", "Emphysema", "Gall bladder stones or inflammation",
+  "Heart disease or heart attack", "High blood pressure", "Hepatitis or cirrhosis",
+  "Osteoporosis", "Colorectal polyps", "Stroke", "Smoked cigarettes regularly",
+  "Current cigarette smoking status", "Family history of lung cancer", "Lung cancer being the first diagnosed cancer",
+  "Ever had enlarged prostate or BPH", "Ever had inflamed prostate", "Amount of times did the individual wake up to urinate at night",
+  "Ever had biopsy of prostate", "Ever had prostatectomy for benign disease",
+  "Ever had transurethral resection or prostate", "Had a vasectomy"
+)
+
+
+# Continuous Variables
+continuous_variables_male <- c(
+  "Body Mass Index", "Weight at Age 20", "Number of years passed since the participant has stopped smoking",
+  "Number of packs smoked per day *years smoked", "Number of aspirin pills taken in the last 12 months",
+  "Number of ibuprofen products taken in the last 12 months", "Age of youngest relative with lung cancer",
+  "Personal history of lung cancer prior to trial entry", "Age of enlarged prostate or BPH",
+  "Age of inflamed prostate", "Age when the individual began to urinate more than once at night",
+  "Age at first prostate surgery", "Age at vasectomy"
+)
+
+all_stats_PLCO_male <- calculate_stats(PLCO_male, binary_variables_male, continuous_variables_male)
+all_stats_UKB_male <- calculate_stats(UKB_male, binary_variables_male, continuous_variables_male)
+
+final_table_PLCO_male <- combine_and_format(all_stats_PLCO_male)
+final_table_UKB_male <- combine_and_format(all_stats_UKB_male)
+
+final_combined_table_male <- left_join(final_table_PLCO_male, final_table_UKB_male, by = "Variable", suffix = c("_PLCO", "_UKB"))
+
+type_of_variable_male <- c(
+  "Continuous", "Binary", "Binary", "Binary", "Binary", "Binary", "Binary", "Binary",
+  "Binary", "Binary", "Binary", "Binary", "Binary", "Binary", "Binary", "Binary",
+  "Binary", "Binary", "Binary", "Binary", "Binary", "Binary", "Binary", "Binary",
+  "Binary", "Binary", "Binary", "Continuous", "Continuous", "Binary", "Binary",
+  "Binary", "Binary", "Binary", "Binary", "Binary", "Binary", "Binary", "Binary",
+  "Binary", "Binary", "Binary", "Binary", "Continuous", "Continuous", "Continuous",
+  "Continuous", "Binary", "Continuous", "Binary", "Binary", "Binary", "Continuous",
+  "Binary", "Continuous", "Continuous", "Continuous", "Continuous", "Binary", "Binary",
+  "Binary", "Binary", "Continuous", "Binary"
+)
+
+
+
+final_combined_table_male <- final_combined_table_male %>%
+  mutate(Type_of_variable = type_of_variable_male) %>%
+  relocate(Type_of_variable, .before = 1)
+
+# Print the final combined table to verify
+print(final_combined_table_male)
+
+write.csv(final_combined_table_male, "Final_Combined_Statistics_Table_UKB_PLCO_MALE.csv", row.names = FALSE)
+
+```
+
