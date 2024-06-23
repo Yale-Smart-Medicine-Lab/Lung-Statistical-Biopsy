@@ -6,7 +6,7 @@ from sklearn.metrics import auc, roc_curve
 import matplotlib.pyplot as plt
 
 # Load data
-data = pd.read_csv('Female_Lung_Data_Greg_imputed.csv')
+data = pd.read_csv('/Users/teresanguyen/Documents/Lung-Statistical-Biopsy/Data Files/PLCO_female_Lung_Data_MAIN_imputed.csv')
 
 # Separate features and target
 X = data.drop(columns=['lung'])
@@ -39,7 +39,7 @@ plt.savefig('female_lung_ROC_random_forest.png', dpi=300, bbox_inches='tight')
 plt.show()
 
 # Load UKB data
-ukb_data = pd.read_csv('Data Files/imputedFemaleDataGreg2.csv')
+ukb_data = pd.read_csv('/Users/teresanguyen/Documents/Lung-Statistical-Biopsy/Data Files/UKB_female_Lung_Imputed_MAIN.csv')
 
 # Assuming 'lung' column contains the target variable
 x_ukb = ukb_data[X.columns]  # Assuming 'X' contains the same features as 'X_train'
