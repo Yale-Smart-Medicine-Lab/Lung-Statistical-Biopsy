@@ -101,7 +101,7 @@ female_ukb_path = '/Users/teresanguyen/Documents/Lung-Statistical-Biopsy/Data Fi
 female_combined_test_metrics = combine_test_metrics(female_plco_test_metrics, female_ukb_metrics)
 
 # Print metrics for male data
-print("\nMale PLCO Training Metrics:")
+print("\nMale Training Metrics:")
 print("Precision: ", round(male_plco_train_metrics[0], 4))
 print("F1 Score: ", round(male_plco_train_metrics[1], 4))
 print("Accuracy: ", round(male_plco_train_metrics[2], 4))
@@ -121,7 +121,7 @@ print("Informedness: ", round(male_combined_test_metrics[6], 4))
 print("Diagnostic Odds Ratio (DOR): ", round(male_combined_test_metrics[7], 4))
 
 # Print metrics for female data
-print("\nFemale PLCO Training Metrics:")
+print("\nFemale Training Metrics:")
 print("Precision: ", round(female_plco_train_metrics[0], 4))
 print("F1 Score: ", round(female_plco_train_metrics[1], 4))
 print("Accuracy: ", round(female_plco_train_metrics[2], 4))
