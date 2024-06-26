@@ -34,21 +34,38 @@ def train_evaluate_model(plco_data_path, ukb_data_path):
 
     # Define the model
     model = keras.models.Sequential([
-        keras.layers.Dense(120, activation='relu', input_shape=[X_train_plco.shape[1]]),
-        keras.layers.Dense(80, activation='relu'),
-        keras.layers.Dense(1, activation='sigmoid')
-    ])
+        keras.layers.Dense(120, activation='relu', input_shape=[X_train_plco.shape[1]],
+                        kernel_initializer=keras.initializers.glorot_normal(),
+                        bias_initializer=keras.initializers.Zeros()),
+        keras.layers.Dense(80, activation='relu',
+                        kernel_initializer=keras.initializers.glorot_normal(),
+                        bias_initializer=keras.initializers.Zeros()),
+        keras.layers.Dense(1)
+        ])
+
+    print(model.summary())
+
 
     model.compile(
-        loss='binary_crossentropy',
-        optimizer=keras.optimizers.Adam(learning_rate=0.01),
-        metrics=[tf.keras.metrics.AUC(name='auc')]
+        loss = keras.losses.BinaryCrossentropy(from_logits=True),
+        optimizer = keras.optimizers.Adam(learning_rate=0.01, clipnorm=1),
+        metrics=[tf.keras.metrics.AUC(name='auc'),
+                 tf.keras.metrics.BinaryAccuracy(name='accuracy'),
+                 tf.keras.metrics.Precision(name='precision'),
+                 tf.keras.metrics.Recall(name='recall'),]
     )
 
     # Train the model on PLCO training data
     model.fit(X_train_plco, y_train_plco, epochs=10, batch_size=1024, verbose=2)
 
     # Evaluate on PLCO test set
+    """ 
+    y_pred_plco_test = model.predict(X_test_plco)
+    fpr_plco, tpr_plco, _ = roc_curve(y_test_plco, y_pred_plco_test)
+    auc_plco = auc(fpr_plco, tpr_plco)
+    """
+
+    model.evaluate(X_test_plco, y_test_plco, verbose=2, batch_size=1024)
     y_pred_plco_test = model.predict(X_test_plco)
     fpr_plco, tpr_plco, _ = roc_curve(y_test_plco, y_pred_plco_test)
     auc_plco = auc(fpr_plco, tpr_plco)
@@ -57,7 +74,7 @@ def train_evaluate_model(plco_data_path, ukb_data_path):
     plco_test_metrics = calculate_metrics(y_test_plco, y_pred_plco_test)
     
     # Evaluate on PLCO training set
-    y_pred_plco_train = model.predict(X_train_plco)
+    y_pred_plco_train = model.predict(X_train_plco) # to calculate metrics
     # Calculate metrics for PLCO training data
     plco_train_metrics = calculate_metrics(y_train_plco, y_pred_plco_train)
 
@@ -147,8 +164,8 @@ plt.plot(male_fpr_plco, male_tpr_plco, label=f'PLCO Male (AUC = {male_auc_plco:.
 plt.plot(male_fpr_ukb, male_tpr_ukb, label=f'UKB Male (AUC = {male_auc_ukb:.3f})')
 plt.plot(female_fpr_plco, female_tpr_plco, label=f'PLCO Female (AUC = {female_auc_plco:.3f})')
 plt.plot(female_fpr_ukb, female_tpr_ukb, label=f'UKB Female (AUC = {female_auc_ukb:.3f})')
-plt.xlabel('False Positive Rate (Specificity)')
-plt.ylabel('True Positive Rate (Senstivity)')
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
 plt.title('Neural Network: ROC Curves for Lung Cancer Prediction')
 plt.legend(loc='lower right')
 plt.savefig('ML Models/Models (Feature Rich)/Feature Rich Photos/ANNFeatureRich.png', dpi=300, bbox_inches='tight')
