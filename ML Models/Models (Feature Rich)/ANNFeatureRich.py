@@ -74,6 +74,7 @@ def train_evaluate_model(plco_data_path, ukb_data_path):
     plco_test_metrics = calculate_metrics(y_test_plco, y_pred_plco_test)
     
     # Evaluate on PLCO training set
+    model.evaluate(X_train_plco, y_train_plco, verbose=2, batch_size=1024)
     y_pred_plco_train = model.predict(X_train_plco) # to calculate metrics
     # Calculate metrics for PLCO training data
     plco_train_metrics = calculate_metrics(y_train_plco, y_pred_plco_train)
