@@ -69,10 +69,10 @@ def cross_validate_and_train(plco_data_path, ukb_data_path):
     return cv_means, cv_stds, (fpr_plco, tpr_plco, auc_plco), (fpr_ukb, tpr_ukb, auc_ukb), plco_train_metrics, ukb_metrics
 
 # Paths to male and female datasets
-male_plco_path = '/Users/teresanguyen/Documents/Lung-Statistical-Biopsy/Data Files/PLCO_male_Lung_Data_MAIN_imputed.csv'
-male_ukb_path = '/Users/teresanguyen/Documents/Lung-Statistical-Biopsy/Data Files/UKB_male_Lung_Imputed_MAIN.csv'
-female_plco_path = '/Users/teresanguyen/Documents/Lung-Statistical-Biopsy/Data Files/PLCO_female_Lung_Data_MAIN_imputed.csv'
-female_ukb_path = '/Users/teresanguyen/Documents/Lung-Statistical-Biopsy/Data Files/UKB_female_Lung_Imputed_MAIN.csv'
+male_plco_path = 'Input/PLCO_male_Lung_Data_MAIN_imputed.csv'
+male_ukb_path = 'Input/UKB_male_Lung_Imputed_MAIN.csv'
+female_plco_path = 'Input/PLCO_female_Lung_Data_MAIN_imputed.csv'
+female_ukb_path = 'Input/UKB_female_Lung_Imputed_MAIN.csv'
 
 # Perform cross-validation and training for male data
 male_cv_means, male_cv_stds, (male_fpr_plco, male_tpr_plco, male_auc_plco), (male_fpr_ukb, male_tpr_ukb, male_auc_ukb), male_plco_train_metrics, male_ukb_metrics = cross_validate_and_train(male_plco_path, male_ukb_path)
@@ -155,7 +155,7 @@ plt.plot(female_fpr_plco, female_tpr_plco, label=f'PLCO Female (AUC = {female_au
 plt.plot(female_fpr_ukb, female_tpr_ukb, label=f'UKB Female (AUC = {female_auc_ukb:.3f})', linewidth=2)
 plt.xlabel('False Positive Rate')
 plt.ylabel('True Positive Rate')
-plt.title('Naive Bayes: ROC Curves for Lung Cancer Prediction')
+plt.title('Naive Bayes: ROC Curves for Lung Cancer Prediction CV')
 plt.legend(loc='lower right')
-plt.savefig('ML Models/feature_rich_cross_validation.py/feature_rich_cv/NaiveBayesFrCv.png', dpi=300, bbox_inches='tight')
+plt.savefig('ML Models/Models (Feature Rich)/feature_rich_cross_validation/feature_rich_cv/NaiveBayesFrCv.png', dpi=300, bbox_inches='tight')
 plt.show()
