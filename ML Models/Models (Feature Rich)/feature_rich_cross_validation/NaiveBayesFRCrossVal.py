@@ -1,3 +1,20 @@
+'''
+This file contains the code to train and evaluate a Naive Bayes model on the PLCO and UKB data.
+The model is trained on the PLCO data, cross-validated on the PLCO data, and tested on the UKB data.
+Functions:
+    cross_validate_and_train: Performs cross-validation and training on the PLCO data and testing on the UKB data.
+        Arguments: plco_data_path, ukb_data_path
+    calculate_metrics: Calculates additional metrics for the model.
+        Arguments: y_true, y_pred (y_true is the true labels, y_pred is the predicted probabilities of the model)
+        Metrics: Precision, F1 Score, Accuracy, Positive Predictive Value (PPV), Negative Predictive Value (NPV), Matthews Correlation Coefficient (MCC), Informedness, Diagnostic Odds Ratio (DOR)
+Output:
+    - Prints the cross-validation metrics for the model on the PLCO data.
+    - Prints the training metrics for the model on the PLCO data.
+    - Prints the testing metrics for the model on the UKB data.
+    - Saves the ROC curve plot for the model on the PLCO data.
+    - Saves the ROC curve plot for the model on the UKB data.
+'''
+
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import KFold

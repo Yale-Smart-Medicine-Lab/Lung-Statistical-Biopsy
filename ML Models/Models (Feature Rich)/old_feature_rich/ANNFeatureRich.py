@@ -1,3 +1,20 @@
+'''
+This file contains the code to train and evaluate an Artificial Neural Network (ANN) model on the PLCO and UKB data.
+Functions: 
+    train_evaluate_model: Trains and evaluates the ANN model on the PLCO and UKB data.
+        Arguments: plco_data_path, ukb_data_path
+    calculate_metrics: Calculates additional metrics for the model.
+        Arguments: y_true, y_pred (y_true is the true labels, y_pred is the predicted probabilities of the model)
+    combine_test_metrics: Combines the test metrics from PLCO and UKB data.
+        Arguments: plco_test_metrics, ukb_metrics
+Ouputs: 
+    - Metrics for the model trained
+    - Metrics for the model trained on PLCO data
+    - Metrics for the model tested on UKB data
+    - ROC curves for the model on PLCO and UKB data
+    - Combined test metrics for the model on PLCO and UKB data
+'''
+
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -99,18 +116,17 @@ def combine_test_metrics(plco_test_metrics, ukb_metrics):
     combined_metrics = np.mean([plco_test_metrics, ukb_metrics], axis=0)
     return combined_metrics
 
-# Train and evaluate models for male data
-male_plco_path = '/Users/teresanguyen/Documents/Lung-Statistical-Biopsy/Data Files/PLCO_male_Lung_Data_MAIN_imputed.csv'
-male_ukb_path = '/Users/teresanguyen/Documents/Lung-Statistical-Biopsy/Data Files/UKB_male_Lung_Imputed_MAIN.csv'
+# Paths to male and female datasets
+male_plco_path = 'Input/PLCO_male_Lung_Data_MAIN_imputed.csv'
+male_ukb_path = 'Input/UKB_male_Lung_Imputed_MAIN.csv'
+female_plco_path = 'Input/PLCO_female_Lung_Data_MAIN_imputed.csv'
+female_ukb_path = 'Input/UKB_female_Lung_Imputed_MAIN.csv'
 
 (male_fpr_plco, male_tpr_plco, male_auc_plco), (male_fpr_ukb, male_tpr_ukb, male_auc_ukb), male_plco_train_metrics, male_plco_test_metrics, male_ukb_metrics = train_evaluate_model(male_plco_path, male_ukb_path)
 
 # Combine male test metrics
 male_combined_test_metrics = combine_test_metrics(male_plco_test_metrics, male_ukb_metrics)
 
-# Train and evaluate models for female data
-female_plco_path = '/Users/teresanguyen/Documents/Lung-Statistical-Biopsy/Data Files/PLCO_female_Lung_Data_MAIN_imputed.csv'
-female_ukb_path = '/Users/teresanguyen/Documents/Lung-Statistical-Biopsy/Data Files/UKB_female_Lung_Imputed_MAIN.csv'
 
 (female_fpr_plco, female_tpr_plco, female_auc_plco), (female_fpr_ukb, female_tpr_ukb, female_auc_ukb), female_plco_train_metrics, female_plco_test_metrics, female_ukb_metrics = train_evaluate_model(female_plco_path, female_ukb_path)
 

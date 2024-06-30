@@ -1,3 +1,20 @@
+'''
+This file contains the code to train and evaluate a Random Forest model on the PLCO and UKB data.
+The model is trained on the PLCO data, cross-validated on the PLCO data, and tested on the UKB data.
+Functions:
+    cross_validate_and_train: Performs cross-validation and training on the PLCO data and testing on the UKB data.
+        Arguments: plco_data_path, ukb_data_path
+    calculate_metrics: Calculates additional metrics for the model.
+        Arguments: y_true, y_pred (y_true is the true labels, y_pred is the predicted probabilities of the model)
+        Metrics: Precision, F1 Score, Accuracy, Positive Predictive Value (PPV), Negative Predictive Value (NPV), Matthews Correlation Coefficient (MCC), Informedness, Diagnostic Odds Ratio (DOR)
+Output:
+    - Prints the cross-validation metrics for the model on the PLCO data.
+    - Prints the training metrics for the model on the PLCO data.
+    - Prints the testing metrics for the model on the UKB data.
+    - Saves the ROC curve plot for the model on the PLCO data.
+    - Saves the ROC curve plot for the model on the UKB data.
+'''
+
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import KFold
@@ -68,10 +85,10 @@ def cross_validate_and_train(plco_data_path, ukb_data_path):
     return cv_means, cv_stds, (fpr_plco, tpr_plco, auc_plco), (fpr_ukb, tpr_ukb, auc_ukb), plco_train_metrics, ukb_metrics
 
 # Paths to male and female datasets
-male_plco_path = '/Users/teresanguyen/Documents/Lung-Statistical-Biopsy/Data Files/PLCO_male_Lung_Data_MAIN_imputed.csv'
-male_ukb_path = '/Users/teresanguyen/Documents/Lung-Statistical-Biopsy/Data Files/UKB_male_Lung_Imputed_MAIN.csv'
-female_plco_path = '/Users/teresanguyen/Documents/Lung-Statistical-Biopsy/Data Files/PLCO_female_Lung_Data_MAIN_imputed.csv'
-female_ukb_path = '/Users/teresanguyen/Documents/Lung-Statistical-Biopsy/Data Files/UKB_female_Lung_Imputed_MAIN.csv'
+male_plco_path = 'Input/PLCO_male_Lung_Data_MAIN_imputed.csv'
+male_ukb_path = 'Input/UKB_male_Lung_Imputed_MAIN.csv'
+female_plco_path = 'Input/PLCO_female_Lung_Data_MAIN_imputed.csv'
+female_ukb_path = 'Input/UKB_female_Lung_Imputed_MAIN.csv'
 
 # Perform cross-validation and training for male data
 male_cv_means, male_cv_stds, (male_fpr_plco, male_tpr_plco, male_auc_plco), (male_fpr_ukb, male_tpr_ukb, male_auc_ukb), male_plco_train_metrics, male_ukb_metrics = cross_validate_and_train(male_plco_path, male_ukb_path)
