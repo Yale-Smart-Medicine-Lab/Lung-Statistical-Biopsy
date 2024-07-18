@@ -22,21 +22,12 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import auc, roc_curve, precision_score, f1_score, accuracy_score, matthews_corrcoef, confusion_matrix
 import matplotlib.pyplot as plt
 
-# Function to calculate additional metrics
-def calculate_metrics(y_true, y_pred):
-    y_pred_labels = (y_pred > 0.5).astype(int)
-    tn, fp, fn, tp = confusion_matrix(y_true, y_pred_labels).ravel()
-    
-    precision = precision_score(y_true, y_pred_labels)
-    f1 = f1_score(y_true, y_pred_labels)
-    accuracy = accuracy_score(y_true, y_pred_labels)
-    ppv = tp / (tp + fp) if (tp + fp) > 0 else 0
-    npv = tn / (tn + fn) if (tn + fn) > 0 else 0
-    mcc = matthews_corrcoef(y_true, y_pred_labels)
-    informedness = (tp / (tp + fn)) + (tn / (tn + fp)) - 1 if (tp + fn) > 0 and (tn + fp) > 0 else 0
-    dor = (tp / fn) / (fp / tn) if fn > 0 and fp > 0 and tn > 0 else 0
-
-    return precision, f1, accuracy, ppv, npv, mcc, informedness, dor
+# Add the top-level directory to the sys.path
+import sys
+import os.path
+sys.path.append(
+    os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, os.path.pardir)))
+from helper_functions import calculate_metrics, print_metrics, plot_auc
 
 # Function to perform cross-validation and training on PLCO data
 def cross_validate_and_train(plco_data_path, ukb_data_path):
@@ -96,82 +87,16 @@ male_cv_means, male_cv_stds, (male_fpr_plco, male_tpr_plco, male_auc_plco), (mal
 # Perform cross-validation and training for female data
 female_cv_means, female_cv_stds, (female_fpr_plco, female_tpr_plco, female_auc_plco), (female_fpr_ukb, female_tpr_ukb, female_auc_ukb), female_plco_train_metrics, female_ukb_metrics = cross_validate_and_train(female_plco_path, female_ukb_path)
 
-# Print cross-validation results for male data
-print("\nMale Cross-Validation Metrics (Mean ± Std):")
-print(f"Precision: {male_cv_means[0]:.4f} ± {male_cv_stds[0]:.4f}")
-print(f"F1 Score: {male_cv_means[1]:.4f} ± {male_cv_stds[1]:.4f}")
-print(f"Accuracy: {male_cv_means[2]:.4f} ± {male_cv_stds[2]:.4f}")
-print(f"PPV: {male_cv_means[3]:.4f} ± {male_cv_stds[3]:.4f}")
-print(f"NPV: {male_cv_means[4]:.4f} ± {male_cv_stds[4]:.4f}")
-print(f"MCC: {male_cv_means[5]:.4f} ± {male_cv_stds[5]:.4f}")
-print(f"Informedness: {male_cv_means[6]:.4f} ± {male_cv_stds[6]:.4f}")
-print(f"DOR: {male_cv_means[7]:.4f} ± {male_cv_stds[7]:.4f}")
+print_metrics(male_plco_train_metrics, male_ukb_metrics,
+              female_plco_train_metrics, female_ukb_metrics,
+              male_cv_means, male_cv_stds,
+              female_cv_means, female_cv_stds)
 
-# Print training results for male data
-print("\nMale Training Metrics:")
-print("Precision: ", round(male_plco_train_metrics[0], 4))
-print("F1 Score: ", round(male_plco_train_metrics[1], 4))
-print("Accuracy: ", round(male_plco_train_metrics[2], 4))
-print("Positive Predictive Value (PPV): ", round(male_plco_train_metrics[3], 4))
-print("Negative Predictive Value (NPV): ", round(male_plco_train_metrics[4], 4))
-print("Matthews Correlation Coefficient (MCC): ", round(male_plco_train_metrics[5], 4))
-print("Informedness: ", round(male_plco_train_metrics[6], 4))
-print("Diagnostic Odds Ratio (DOR): ", round(male_plco_train_metrics[7], 4))
+plot_auc(male_fpr_plco, male_tpr_plco, male_auc_plco,
+             male_fpr_ukb, male_tpr_ukb, male_auc_ukb,
+             female_fpr_plco, female_tpr_plco, female_auc_plco,
+             female_fpr_ukb, female_tpr_ukb, female_auc_ukb,
+             filename='ML Models/Models (Feature Rich)/feature_rich_cross_validation/feature_rich_cv/RandomForestFRCv.png',
+             title='Random Forest: ROC Curves for Lung Cancer Prediction',
+             linewidth=2)
 
-# Print testing results for male data
-print("\nMale Testing Metrics on UKB Data:")
-print("Precision: ", round(male_ukb_metrics[0], 4))
-print("F1 Score: ", round(male_ukb_metrics[1], 4))
-print("Accuracy: ", round(male_ukb_metrics[2], 4))
-print("Positive Predictive Value (PPV): ", round(male_ukb_metrics[3], 4))
-print("Negative Predictive Value (NPV): ", round(male_ukb_metrics[4], 4))
-print("Matthews Correlation Coefficient (MCC): ", round(male_ukb_metrics[5], 4))
-print("Informedness: ", round(male_ukb_metrics[6], 4))
-print("Diagnostic Odds Ratio (DOR): ", round(male_ukb_metrics[7], 4))
-
-# Print cross-validation results for female data
-print("\nFemale Cross-Validation Metrics (Mean ± Std):")
-print(f"Precision: {female_cv_means[0]:.4f} ± {female_cv_stds[0]:.4f}")
-print(f"F1 Score: {female_cv_means[1]:.4f} ± {female_cv_stds[1]:.4f}")
-print(f"Accuracy: {female_cv_means[2]:.4f} ± {female_cv_stds[2]:.4f}")
-print(f"PPV: {female_cv_means[3]:.4f} ± {female_cv_stds[3]:.4f}")
-print(f"NPV: {female_cv_means[4]:.4f} ± {female_cv_stds[4]:.4f}")
-print(f"MCC: {female_cv_means[5]:.4f} ± {female_cv_stds[5]:.4f}")
-print(f"Informedness: {female_cv_means[6]:.4f} ± {female_cv_stds[6]:.4f}")
-print(f"DOR: {female_cv_means[7]:.4f} ± {female_cv_stds[7]:.4f}")
-
-# Print training results for female data
-print("\nFemale Training Metrics:")
-print("Precision: ", round(female_plco_train_metrics[0], 4))
-print("F1 Score: ", round(female_plco_train_metrics[1], 4))
-print("Accuracy: ", round(female_plco_train_metrics[2], 4))
-print("Positive Predictive Value (PPV): ", round(female_plco_train_metrics[3], 4))
-print("Negative Predictive Value (NPV): ", round(female_plco_train_metrics[4], 4))
-print("Matthews Correlation Coefficient (MCC): ", round(female_plco_train_metrics[5], 4))
-print("Informedness: ", round(female_plco_train_metrics[6], 4))
-print("Diagnostic Odds Ratio (DOR): ", round(female_plco_train_metrics[7], 4))
-
-# Print testing results for female data
-print("\nFemale Testing Metrics on UKB Data:")
-print("Precision: ", round(female_ukb_metrics[0], 4))
-print("F1 Score: ", round(female_ukb_metrics[1], 4))
-print("Accuracy: ", round(female_ukb_metrics[2], 4))
-print("Positive Predictive Value (PPV): ", round(female_ukb_metrics[3], 4))
-print("Negative Predictive Value (NPV): ", round(female_ukb_metrics[4], 4))
-print("Matthews Correlation Coefficient (MCC): ", round(female_ukb_metrics[5], 4))
-print("Informedness: ", round(female_ukb_metrics[6], 4))
-print("Diagnostic Odds Ratio (DOR): ", round(female_ukb_metrics[7], 4))
-
-# Plot all ROC curves on the same figure
-plt.figure(figsize=(10, 10))
-plt.plot([0, 1], [0, 1], 'k--')  # Baseline
-plt.plot(male_fpr_plco, male_tpr_plco, label=f'PLCO Male (AUC = {male_auc_plco:.3f})', linewidth=2)
-plt.plot(male_fpr_ukb, male_tpr_ukb, label=f'UKB Male (AUC = {male_auc_ukb:.3f})', linewidth=2)
-plt.plot(female_fpr_plco, female_tpr_plco, label=f'PLCO Female (AUC = {female_auc_plco:.3f})', linewidth=2)
-plt.plot(female_fpr_ukb, female_tpr_ukb, label=f'UKB Female (AUC = {female_auc_ukb:.3f})', linewidth=2)
-plt.xlabel('False Positive Rate')
-plt.ylabel('True Positive Rate')
-plt.title('Random Forest: ROC Curves for Lung Cancer Prediction')
-plt.legend(loc='lower right')
-plt.savefig('ML Models/Models (Feature Rich)/feature_rich_cross_validation/feature_rich_cv/RandomForestFRCv.png', dpi=300, bbox_inches='tight')
-plt.show()
