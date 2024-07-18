@@ -132,3 +132,49 @@ Absent_30 <- Present_data_table[Present_data_table$PresentPercentage < 70, ]
 cat(Absent_30$Column)
 
 ```
+
+____________________
+
+How much data is present for each feature? This focuses separately on male and female.
+
+Load the dataset
+
+```{r}
+
+NHIS_female <- read.csv("/Users/teresanguyen/Documents/Lung-Statistical-Biopsy/Data Files/Data Files ETC/female_NHISdata.csv")
+
+NHIS_male <- read.csv("/Users/teresanguyen/Documents/Lung-Statistical-Biopsy/Data Files/Data Files ETC/male_NHISdata.csv")
+
+```
+
+```{r}
+
+# Function to calculate the percentage of data present for each feature
+calculate_data_presence_percentage <- function(data) {
+  total_rows <- nrow(data)
+  sapply(data, function(column) sum(!is.na(column)) / total_rows * 100)
+}
+
+# Calculate data presence percentage for each dataset
+female_data_presence_percentage <- calculate_data_presence_percentage(NHIS_female)
+male_data_presence_percentage <- calculate_data_presence_percentage(NHIS_male)
+
+# Create data frames for each dataset
+female_data_presence_df <- data.frame(
+  Feature = names(female_data_presence_percentage),
+  Data_Present_Percentage = female_data_presence_percentage
+)
+
+male_data_presence_df <- data.frame(
+  Feature = names(male_data_presence_percentage),
+  Data_Present_Percentage = male_data_presence_percentage
+)
+
+# Print the data presence tables
+print("Female Data Presence Percentage:")
+print(female_data_presence_df)
+
+print("Male Data Presence Percentage:")
+print(male_data_presence_df)
+
+```
