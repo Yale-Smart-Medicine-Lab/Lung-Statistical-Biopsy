@@ -72,15 +72,17 @@ def cross_validate_and_train(plco_data_path, ukb_data_path):
     # Cross-validation
     kf = KFold(n_splits=10, shuffle=True, random_state=42)
     cv_metrics = []
-    
+    history_list = []  # New list to store the history of each fold
+
     for train_index, val_index in kf.split(X_plco_train):
         X_train, X_val = X_plco_train.iloc[train_index], X_plco_train.iloc[val_index]
         y_train, y_val = y_plco_train.iloc[train_index], y_plco_train.iloc[val_index]
         
         model = create_model(X_plco_train.shape[1])
-        model.fit(X_train, y_train, epochs=10, batch_size=1024, verbose=0)
+        history = model.fit(X_train, y_train, epochs=10, batch_size=1024, verbose=0, validation_data=(X_val, y_val))
         y_pred_val = model.predict(X_val)
         cv_metrics.append(calculate_metrics(y_val, y_pred_val))
+        history_list.append(history)
     
     cv_metrics = np.array(cv_metrics)
     cv_means = np.mean(cv_metrics, axis=0)
@@ -88,7 +90,7 @@ def cross_validate_and_train(plco_data_path, ukb_data_path):
     
     # Train on the entire PLCO dataset
     model = create_model(X_plco_train.shape[1])
-    model.fit(X_plco_train, y_plco_train, epochs=10, batch_size=1024, verbose=2)
+    history = model.fit(X_plco_train, y_plco_train, epochs=10, batch_size=1024, verbose=2, validation_split=0.1)
 
     # Evaluate on PLCO training set
     model.evaluate(X_plco_train, y_plco_train, verbose=2, batch_size=1024)
@@ -112,7 +114,7 @@ def cross_validate_and_train(plco_data_path, ukb_data_path):
     auc_ukb = auc(fpr_ukb, tpr_ukb)
     ukb_metrics = calculate_metrics(y_ukb, y_pred_ukb)
     
-    return (fpr_plco, tpr_plco, auc_plco), (fpr_ukb, tpr_ukb, auc_ukb), cv_means, cv_stds, plco_train_metrics, ukb_metrics
+    return (fpr_plco, tpr_plco, auc_plco), (fpr_ukb, tpr_ukb, auc_ukb), cv_means, cv_stds, plco_train_metrics, ukb_metrics, history_list, history  # Return history
 
 # Paths to male and female datasets
 male_plco_path = 'Input/PLCO_male_Lung_Data_MAIN_imputed.csv'
@@ -121,10 +123,32 @@ female_plco_path = 'Input/PLCO_female_Lung_Data_MAIN_imputed.csv'
 female_ukb_path = 'Input/UKB_female_Lung_Imputed_MAIN.csv'
 
 # Perform cross-validation and training for male data
-(male_fpr_plco, male_tpr_plco, male_auc_plco), (male_fpr_ukb, male_tpr_ukb, male_auc_ukb), male_cv_means, male_cv_stds, male_plco_train_metrics, male_ukb_metrics = cross_validate_and_train(male_plco_path, male_ukb_path)
+(male_fpr_plco, male_tpr_plco, male_auc_plco), (male_fpr_ukb, male_tpr_ukb, male_auc_ukb), male_cv_means, male_cv_stds, male_plco_train_metrics, male_ukb_metrics, male_history_list, male_history = cross_validate_and_train(male_plco_path, male_ukb_path)
 
 # Perform cross-validation and training for female data
-(female_fpr_plco, female_tpr_plco, female_auc_plco), (female_fpr_ukb, female_tpr_ukb, female_auc_ukb), female_cv_means, female_cv_stds, female_plco_train_metrics, female_ukb_metrics = cross_validate_and_train(female_plco_path, female_ukb_path)
+(female_fpr_plco, female_tpr_plco, female_auc_plco), (female_fpr_ukb, female_tpr_pl_ukb, female_auc_ukb), female_cv_means, female_cv_stds, female_plco_train_metrics, female_ukb_metrics, female_history_list, female_history = cross_validate_and_train(female_plco_path, female_ukb_path)
+
+# Plot the loss curves for male data
+plt.figure(figsize=(10, 5))
+for history in male_history_list:  # Plot loss for each fold
+    plt.plot(history.history['loss'], 'b-', alpha=0.3)
+    plt.plot(history.history['val_loss'], 'r-', alpha=0.3)
+plt.title('ANN Feature Rich: Male Data Loss Curves')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.legend(['Training Loss', 'Validation Loss'])
+plt.show()
+
+# Plot the loss curves for female data
+plt.figure(figsize=(10, 5))
+for history in female_history_list:  # Plot loss for each fold
+    plt.plot(history.history['loss'], 'b-', alpha=0.3)
+    plt.plot(history.history['val_loss'], 'r-', alpha=0.3)
+plt.title('ANN Feature Rich: Female Data Loss Curves')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.legend(['Training Loss', 'Validation Loss'])
+plt.show()
 
 # Print cross-validation results for male data
 print("\nMale Cross-Validation Metrics (Mean ± Std):")
@@ -198,7 +222,7 @@ plt.plot([0, 1], [0, 1], 'k--')  # Baseline
 plt.plot(male_fpr_plco, male_tpr_plco, label=f'PLCO Male (AUC = {male_auc_plco:.3f})')
 plt.plot(male_fpr_ukb, male_tpr_ukb, label=f'UKB Male (AUC = {male_auc_ukb:.3f})')
 plt.plot(female_fpr_plco, female_tpr_plco, label=f'PLCO Female (AUC = {female_auc_plco:.3f})')
-plt.plot(female_fpr_ukb, female_tpr_ukb, label=f'UKB Female (AUC = {female_auc_ukb:.3f})')
+plt.plot(female_fpr_ukb, female_tpr_pl_ukb, label=f'UKB Female (AUC = {female_auc_ukb:.3f})')
 plt.xlabel('False Positive Rate')
 plt.ylabel('True Positive Rate')
 plt.title('Neural Network: ROC Curves for Lung Cancer Prediction CV')

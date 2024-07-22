@@ -93,11 +93,11 @@ def cross_validate_and_train(plco_data_path, ukb_data_path, nhis_data_path):
 # Paths to male and female datasets
 male_ukb_path = 'Input/UKB_male_Lung_Imputed_MAIN.csv'
 male_plco_path = 'Input/PLCO_male_Lung_Data_MAIN_imputed.csv'
-male_nhis_path = 'Input/male_filtered_70_NHIS_imputed.csv'
+male_nhis_path = 'Input/male_filtered_chosen_NHIS_imputed.csv'
 
 female_ukb_path = 'Input/UKB_female_Lung_Imputed_MAIN.csv'
 female_plco_path = 'Input/PLCO_female_Lung_Data_MAIN_imputed.csv'
-female_nhis_path = 'Input/female_filtered_70_NHIS_imputed.csv'
+female_nhis_path = 'Input/female_filtered_chosen_NHIS_imputed.csv'
 
 # Perform cross-validation and training for male data
 (male_fpr_plco, male_tpr_plco, male_auc_plco), (male_fpr_ukb, male_tpr_ukb, male_auc_ukb), (male_fpr_nhis, male_tpr_nhis, male_auc_nhis), male_cv_means, male_cv_stds, male_plco_train_metrics, male_ukb_metrics, male_nhis_metrics = cross_validate_and_train(male_plco_path, male_ukb_path, male_nhis_path)
@@ -204,7 +204,7 @@ plt.plot(female_fpr_ukb, female_tpr_ukb, label=f'UKB Female (AUC = {female_auc_u
 plt.plot(female_fpr_nhis, female_tpr_nhis, label=f'NHIS Female (AUC = {female_auc_nhis:.3f})')
 plt.xlabel('False Positive Rate')
 plt.ylabel('True Positive Rate')
-plt.title('Random Forest: ROC Curves for Lung Cancer Prediction (70%) CV')
+plt.title('Random Forest: ROC Curves for Lung Cancer Prediction (chosen) CV')
 plt.legend(loc='lower right')
-plt.savefig('/Users/teresanguyen/Lung-Statistical-Biopsy/ML Models/Models (Feature Streamlined)/Models (Feature Streamlined CV)/feature streamlined cv photos/RandomForestFStreamlinedCv70.png', dpi=300, bbox_inches='tight')
+plt.savefig('/Users/teresanguyen/Lung-Statistical-Biopsy/ML Models/Models (Feature Streamlined)/Models (Feature Streamlined CV)/feature streamlined cv photos/RandomForestFStreamlinedCvChosen.png', dpi=300, bbox_inches='tight')
 plt.show()
