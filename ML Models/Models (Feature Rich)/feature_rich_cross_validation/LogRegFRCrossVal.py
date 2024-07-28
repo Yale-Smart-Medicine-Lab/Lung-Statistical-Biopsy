@@ -19,7 +19,8 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import KFold
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import auc, roc_curve, precision_score, f1_score, accuracy_score, matthews_corrcoef, confusion_matrix
+from sklearn.metrics import auc, roc_curve, precision_score, f1_score, accuracy_score, matthews_corrcoef, confusion_matrix, log_loss
+from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 
 # Function to calculate additional metrics
@@ -39,36 +40,50 @@ def calculate_metrics(y_true, y_pred):
     return precision, f1, accuracy, ppv, npv, mcc, informedness, dor
 
 # Function to perform cross-validation and training on PLCO data
-def cross_validate_and_train(plco_data_path, ukb_data_path):
+def cross_validate_and_train(plco_data_path, ukb_data_path, solver='lbfgs', max_iter=50000):
     # Load PLCO data
     plco_data = pd.read_csv(plco_data_path)
-    X_plco_train = plco_data.drop(columns=['lung'])
-    y_plco_train = plco_data['lung']
+    ukb_data = pd.read_csv(ukb_data_path)
+    
+    # Ensure both datasets have the same features
+    common_features = list(set(plco_data.columns) & set(ukb_data.columns))
+    common_features.remove('lung')
+    
+    X_plco_train = plco_data[common_features].values
+    y_plco_train = plco_data['lung'].values
+    
+    # Scale the data
+    scaler = StandardScaler()
+    X_plco_train = scaler.fit_transform(X_plco_train)
     
     # Cross-validation
     kf = KFold(n_splits=10, shuffle=True, random_state=42)
     cv_metrics = []
-    # roc_curves = []
+    loss_curves = []
 
     for train_index, val_index in kf.split(X_plco_train):
-        X_train, X_val = X_plco_train.iloc[train_index], X_plco_train.iloc[val_index]
-        y_train, y_val = y_plco_train.iloc[train_index], y_plco_train.iloc[val_index]
+        X_train, X_val = X_plco_train[train_index], X_plco_train[val_index]
+        y_train, y_val = y_plco_train[train_index], y_plco_train[val_index]
         
-        model = LogisticRegression(max_iter=1000)
+        model = LogisticRegression(max_iter=max_iter, solver=solver, verbose=1)
         model.fit(X_train, y_train)
         y_pred_val = model.predict_proba(X_val)[:, 1]
         cv_metrics.append(calculate_metrics(y_val, y_pred_val))
 
-        # ROC curve for this fold
-        # fpr, tpr, _ = roc_curve(y_val, y_pred_val)
-        # roc_curves.append((fpr, tpr, auc(fpr, tpr)))
+        # Calculate log loss for each iteration
+        losses = []
+        for i in range(1, model.n_iter_[0] + 1):
+            model_iter = LogisticRegression(max_iter=i, solver=solver, warm_start=True)
+            model_iter.fit(X_train, y_train)
+            y_pred_iter = model_iter.predict_proba(X_val)[:, 1]
+            losses.append(log_loss(y_val, y_pred_iter))
+        loss_curves.append(losses)
     
     cv_metrics = np.array(cv_metrics)
     cv_means = np.mean(cv_metrics, axis=0)
     cv_stds = np.std(cv_metrics, axis=0)
     
     # Train on the entire PLCO dataset
-    # model = LogisticRegression(max_iter=1000)
     model.fit(X_plco_train, y_plco_train)
     
     # Evaluate on PLCO training set
@@ -77,10 +92,10 @@ def cross_validate_and_train(plco_data_path, ukb_data_path):
     auc_plco = auc(fpr_plco, tpr_plco)
     plco_train_metrics = calculate_metrics(y_plco_train, y_pred_plco_train)
 
-    # Load and prepare UKB data
-    ukb_data = pd.read_csv(ukb_data_path)
-    X_ukb = ukb_data[X_plco_train.columns]
-    y_ukb = ukb_data['lung']
+    # Prepare UKB data
+    X_ukb = ukb_data[common_features].values
+    X_ukb = scaler.transform(X_ukb)  # Apply the same scaling
+    y_ukb = ukb_data['lung'].values
     
     # Predict on UKB data
     y_pred_ukb = model.predict_proba(X_ukb)[:, 1]
@@ -88,8 +103,7 @@ def cross_validate_and_train(plco_data_path, ukb_data_path):
     auc_ukb = auc(fpr_ukb, tpr_ukb)
     ukb_metrics = calculate_metrics(y_ukb, y_pred_ukb)
     
-    # add roc_curves in case to plot ROC curves
-    return cv_means, cv_stds, (fpr_plco, tpr_plco, auc_plco), (fpr_ukb, tpr_ukb, auc_ukb), plco_train_metrics, ukb_metrics
+    return cv_means, cv_stds, (fpr_plco, tpr_plco, auc_plco), (fpr_ukb, tpr_ukb, auc_ukb), plco_train_metrics, ukb_metrics, loss_curves
 
 # Paths to male and female datasets
 male_plco_path = 'Input/PLCO_male_Lung_Data_MAIN_imputed.csv'
@@ -98,10 +112,10 @@ female_plco_path = 'Input/PLCO_female_Lung_Data_MAIN_imputed.csv'
 female_ukb_path = 'Input/UKB_female_Lung_Imputed_MAIN.csv'
 
 # Perform cross-validation and training for male data
-male_cv_means, male_cv_stds, (male_fpr_plco, male_tpr_plco, male_auc_plco), (male_fpr_ukb, male_tpr_ukb, male_auc_ukb), male_plco_train_metrics, male_ukb_metrics = cross_validate_and_train(male_plco_path, male_ukb_path)
+male_cv_means, male_cv_stds, (male_fpr_plco, male_tpr_plco, male_auc_plco), (male_fpr_ukb, male_tpr_ukb, male_auc_ukb), male_plco_train_metrics, male_ukb_metrics, male_loss_curves = cross_validate_and_train(male_plco_path, male_ukb_path, solver='lbfgs', max_iter=50000)
 
 # Perform cross-validation and training for female data
-female_cv_means, female_cv_stds, (female_fpr_plco, female_tpr_plco, female_auc_plco), (female_fpr_ukb, female_tpr_ukb, female_auc_ukb), female_plco_train_metrics, female_ukb_metrics = cross_validate_and_train(female_plco_path, female_ukb_path)
+female_cv_means, female_cv_stds, (female_fpr_plco, female_tpr_plco, female_auc_plco), (female_fpr_ukb, female_tpr_ukb, female_auc_ukb), female_plco_train_metrics, female_ukb_metrics, female_loss_curves = cross_validate_and_train(female_plco_path, female_ukb_path, solver='lbfgs', max_iter=50000)
 
 # Print cross-validation results for male data
 print("\nMale Cross-Validation Metrics (Mean ± Std):")
@@ -169,23 +183,31 @@ print("Matthews Correlation Coefficient (MCC): ", round(female_ukb_metrics[5], 4
 print("Informedness: ", round(female_ukb_metrics[6], 4))
 print("Diagnostic Odds Ratio (DOR): ", round(female_ukb_metrics[7], 4))
 
-"""# Plot all ROC curves on the same figure
-plt.figure(figsize=(10, 10))
-plt.plot([0, 1], [0, 1], 'k--')  # Baseline
-# Plot ROC curves for each fold in cross-validation
-for i, (fpr, tpr, auc_score) in enumerate(male_roc_curves):
-    plt.plot(fpr, tpr, label=f'Male PLCO Fold {i+1} (AUC = {auc_score:.3f})', alpha=0.3)
-for i, (fpr, tpr, auc_score) in enumerate(female_roc_curves):
-    plt.plot(fpr, tpr, label=f'Female PLCO Fold {i+1} (AUC = {auc_score:.3f})', alpha=0.3)"""
+# Plot loss curves for each fold in cross-validation
+plt.figure(figsize=(10, 5))
+for i, losses in enumerate(male_loss_curves):
+    plt.plot(losses, label=f'Male Fold {i+1}', alpha=0.3)
+for i, losses in enumerate(female_loss_curves):
+    plt.plot(losses, label=f'Female Fold {i+1}', alpha=0.3)
+
+plt.xlabel('Iteration')
+plt.ylabel('Log Loss')
+plt.title('Logistic Regression: Loss Curves for Cross-Validation Folds')
+plt.legend(loc='upper right', fontsize='small', framealpha=0.5)
+plt.savefig('ML Models/Models (Feature Rich)/feature_rich_cross_validation/feature_rich_cv/LogRegFeatureRichLossCurves.png', dpi=300, bbox_inches='tight')
+plt.show()
 
 # Plot ROC curves for UKB data
+plt.figure(figsize=(10, 10))
+plt.plot([0, 1], [0, 1], 'k--')  # Baseline
 plt.plot(male_fpr_plco, male_tpr_plco, label=f'PLCO Male (AUC = {male_auc_plco:.3f})', linewidth=2)
 plt.plot(male_fpr_ukb, male_tpr_ukb, label=f'UKB Male (AUC = {male_auc_ukb:.3f})', linewidth=2)
 plt.plot(female_fpr_plco, female_tpr_plco, label=f'PLCO Female (AUC = {female_auc_plco:.3f})', linewidth=2)
 plt.plot(female_fpr_ukb, female_tpr_ukb, label=f'UKB Female (AUC = {female_auc_ukb:.3f})', linewidth=2)
 plt.xlabel('False Positive Rate')
 plt.ylabel('True Positive Rate')
-plt.title('Logistic Regression: ROC Curves for Lung Cancer Prediction CV')
+plt.title('Logistic Regression: ROC Curves for Lung Cancer Prediction')
 plt.legend(loc='lower right')
-plt.savefig('ML Models/Models (Feature Rich)/feature_rich_cross_validation/feature_rich_cv/LogRegFeatureRichCV.png', dpi=300, bbox_inches='tight')
+plt.savefig('ML Models/Models (Feature Rich)/feature_rich_cross_validation/feature_rich_cv/LogRegFeatureRichROCCurves.png', dpi=300, bbox_inches='tight')
 plt.show()
+

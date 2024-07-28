@@ -30,7 +30,7 @@ sys.path.append(
 from helper_functions import calculate_metrics, print_metrics, plot_auc
 
 # Function to perform cross-validation and training on PLCO data
-def cross_validate_and_train(plco_data_path, ukb_data_path):
+def cross_validate_and_train(plco_data_path, ukb_data_path, n_estimators=100):
     # Load PLCO data
     plco_data = pd.read_csv(plco_data_path)
     X_plco_train = plco_data.drop(columns=['lung'])
@@ -39,15 +39,19 @@ def cross_validate_and_train(plco_data_path, ukb_data_path):
     # Cross-validation
     kf = KFold(n_splits=10, shuffle=True, random_state=42)
     cv_metrics = []
+    oob_errors = []
 
     for train_index, val_index in kf.split(X_plco_train):
         X_train, X_val = X_plco_train.iloc[train_index], X_plco_train.iloc[val_index]
         y_train, y_val = y_plco_train.iloc[train_index], y_plco_train.iloc[val_index]
         
-        model = RandomForestClassifier()
+        model = RandomForestClassifier(oob_score=True, n_estimators=n_estimators, random_state=42)
         model.fit(X_train, y_train)
         y_pred_val = model.predict_proba(X_val)[:, 1]
         cv_metrics.append(calculate_metrics(y_val, y_pred_val))
+
+        # append oob error for each fold
+        oob_errors.append(1 - model.oob_score)
     
     cv_metrics = np.array(cv_metrics)
     cv_means = np.mean(cv_metrics, axis=0)
@@ -73,7 +77,7 @@ def cross_validate_and_train(plco_data_path, ukb_data_path):
     auc_ukb = auc(fpr_ukb, tpr_ukb)
     ukb_metrics = calculate_metrics(y_ukb, y_pred_ukb)
     
-    return cv_means, cv_stds, (fpr_plco, tpr_plco, auc_plco), (fpr_ukb, tpr_ukb, auc_ukb), plco_train_metrics, ukb_metrics
+    return cv_means, cv_stds, (fpr_plco, tpr_plco, auc_plco), (fpr_ukb, tpr_ukb, auc_ukb), plco_train_metrics, ukb_metrics, oob_errors
 
 # Paths to male and female datasets
 male_plco_path = 'Input/PLCO_male_Lung_Data_MAIN_imputed.csv'
@@ -82,10 +86,22 @@ female_plco_path = 'Input/PLCO_female_Lung_Data_MAIN_imputed.csv'
 female_ukb_path = 'Input/UKB_female_Lung_Imputed_MAIN.csv'
 
 # Perform cross-validation and training for male data
-male_cv_means, male_cv_stds, (male_fpr_plco, male_tpr_plco, male_auc_plco), (male_fpr_ukb, male_tpr_ukb, male_auc_ukb), male_plco_train_metrics, male_ukb_metrics = cross_validate_and_train(male_plco_path, male_ukb_path)
+male_cv_means, male_cv_stds, (male_fpr_plco, male_tpr_plco, male_auc_plco), (male_fpr_ukb, male_tpr_ukb, male_auc_ukb), male_plco_train_metrics, male_ukb_metrics, male_oob_errors = cross_validate_and_train(male_plco_path, male_ukb_path)
 
 # Perform cross-validation and training for female data
-female_cv_means, female_cv_stds, (female_fpr_plco, female_tpr_plco, female_auc_plco), (female_fpr_ukb, female_tpr_ukb, female_auc_ukb), female_plco_train_metrics, female_ukb_metrics = cross_validate_and_train(female_plco_path, female_ukb_path)
+female_cv_means, female_cv_stds, (female_fpr_plco, female_tpr_plco, female_auc_plco), (female_fpr_ukb, female_tpr_ukb, female_auc_ukb), female_plco_train_metrics, female_ukb_metrics, female_oob_errors = cross_validate_and_train(female_plco_path, female_ukb_path)
+
+# Plot OOB error curves for each fold in cross-validation
+plt.figure(figsize=(10, 5))
+plt.plot(range(1, len(male_oob_errors) + 1), male_oob_errors, label='Male OOB Error', alpha=0.7)
+plt.plot(range(1, len(female_oob_errors) + 1), female_oob_errors, label='Female OOB Error', alpha=0.7)
+
+plt.xlabel('Fold')
+plt.ylabel('OOB Error')
+plt.title('Random Forest: OOB Error for Cross-Validation Folds')
+plt.legend(loc='upper right', fontsize='small', framealpha=0.5)
+plt.savefig('ML Models/Models (Feature Rich)/feature_rich_cross_validation/feature_rich_cv/RandomForestFeatureRichOOBErrorCurves.png', dpi=300, bbox_inches='tight')
+plt.show()
 
 print_metrics(male_plco_train_metrics, male_ukb_metrics,
               female_plco_train_metrics, female_ukb_metrics,

@@ -1,8 +1,7 @@
 import pandas as pd
 from sklearn.impute import KNNImputer
 
-fileNames = ['/Users/teresanguyen/Documents/Lung-Statistical-Biopsy/Data Files/Data Files (Need to be Imputed)/male_filtered_chosen_NHIS', 
-             '/Users/teresanguyen/Documents/Lung-Statistical-Biopsy/Data Files/Data Files (Need to be Imputed)/female_filtered_chosen_NHIS']
+fileNames = ['/Users/teresanguyen/Documents/Lung-Statistical-Biopsy/Data Files/Data Files ETC/male_NHISdata_Rich',]
 suffix = '_imputed'
 ext = '.csv'
 
