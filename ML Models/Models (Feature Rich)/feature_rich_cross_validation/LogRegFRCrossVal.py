@@ -102,6 +102,13 @@ def cross_validate_and_train(plco_data_path, ukb_data_path, solver='lbfgs', max_
     fpr_ukb, tpr_ukb, _ = roc_curve(y_ukb, y_pred_ukb)
     auc_ukb = auc(fpr_ukb, tpr_ukb)
     ukb_metrics = calculate_metrics(y_ukb, y_pred_ukb)
+
+    # coefficients
+    if hasattr(model, 'coef_'):
+        print("Model Coefficients:")
+        feature_coefficients = pd.DataFrame({'Feature': common_features, 'Coefficient': model.coef_[0]})
+        print(feature_coefficients)
+        feature_coefficients.to_csv('model_coefficients_labeled.csv', index=False)
     
     return cv_means, cv_stds, (fpr_plco, tpr_plco, auc_plco), (fpr_ukb, tpr_ukb, auc_ukb), plco_train_metrics, ukb_metrics, loss_curves
 
