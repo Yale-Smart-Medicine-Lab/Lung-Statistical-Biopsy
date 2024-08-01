@@ -6,6 +6,7 @@ from tensorflow import keras
 from sklearn.model_selection import KFold
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
+from sklearn.naive_bayes import GaussianNB
 from sklearn.metrics import roc_curve, auc, precision_score, f1_score, accuracy_score, matthews_corrcoef, confusion_matrix, log_loss
 
 # This function calculates the following metrics: precision, f1, accuracy, ppv, npv, mcc, informedness, dor
@@ -154,6 +155,58 @@ def log_reg_cross_validation_and_train(plco_data_path, ukb_data_path, solver, ma
 
     return (fpr_plco, tpr_plco, auc_plco), (fpr_ukb, tpr_ukb, auc_ukb), cv_means, cv_stds, plco_train_metrics, ukb_metrics, loss_curves
 
+def nb_cross_validation_and_train(plco_data_path, ukb_data_path):
+    plco_data = pd.read_csv(plco_data_path)
+    X_plco_train = plco_data.drop(columns=['lung'])
+    y_plco_train = plco_data['lung']
+    
+    # Cross-validation
+    kf = KFold(n_splits=10, shuffle=True, random_state=42)
+    cv_metrics = []
+    loss_curves = []
+
+    for train_index, val_index in kf.split(X_plco_train):
+        X_train, X_val = X_plco_train.iloc[train_index], X_plco_train.iloc[val_index]
+        y_train, y_val = y_plco_train.iloc[train_index], y_plco_train.iloc[val_index]
+        
+        model = GaussianNB()
+        model.fit(X_train, y_train)
+        y_pred_val = model.predict_proba(X_val)[:, 1]
+        cv_metrics.append(calculate_metrics(y_val, y_pred_val))
+
+        # Calculate log loss for each iteration
+        losses = []
+        for i in range(1, 11):  # For Naive Bayes, just use 10 fixed iterations
+            model.fit(X_train, y_train)
+            y_pred_iter = model.predict_proba(X_val)[:, 1]
+            losses.append(log_loss(y_val, y_pred_iter))
+        loss_curves.append(losses)
+    
+    cv_metrics = np.array(cv_metrics)
+    cv_means = np.mean(cv_metrics, axis=0)
+    cv_stds = np.std(cv_metrics, axis=0)
+    
+    # Train on the entire PLCO dataset
+    model.fit(X_plco_train, y_plco_train)
+    
+    # Evaluate on PLCO training set
+    y_pred_plco_train = model.predict_proba(X_plco_train)[:, 1]
+    fpr_plco, tpr_plco, _ = roc_curve(y_plco_train, y_pred_plco_train)
+    auc_plco = auc(fpr_plco, tpr_plco)
+    plco_train_metrics = calculate_metrics(y_plco_train, y_pred_plco_train)
+
+    # Load and prepare UKB data
+    ukb_data = pd.read_csv(ukb_data_path)
+    X_ukb = ukb_data[X_plco_train.columns]
+    y_ukb = ukb_data['lung']
+    
+    # Predict on UKB data
+    y_pred_ukb = model.predict_proba(X_ukb)[:, 1]
+    fpr_ukb, tpr_ukb, _ = roc_curve(y_ukb, y_pred_ukb)
+    auc_ukb = auc(fpr_ukb, tpr_ukb)
+    ukb_metrics = calculate_metrics(y_ukb, y_pred_ukb)
+    
+    return (fpr_plco, tpr_plco, auc_plco), (fpr_ukb, tpr_ukb, auc_ukb), cv_means, cv_stds, plco_train_metrics, ukb_metrics, loss_curves
 
 def ann_plot_loss_curves(history_list, title):
     plt.figure(figsize=(10, 5))
@@ -167,7 +220,7 @@ def ann_plot_loss_curves(history_list, title):
     plt.savefig('ML Models/models/' + title + '.png', dpi=300, bbox_inches='tight')
     plt.show()
 
-def log_reg_plot_loss_curves(male_history_list, female_history_list, title):
+def plot_loss_curves(male_history_list, female_history_list, title):
     plt.figure(figsize=(10, 5))
     for i, losses in enumerate(male_history_list):
         plt.plot(losses, label=f'Fold {i + 1}', alpha=0.3)
