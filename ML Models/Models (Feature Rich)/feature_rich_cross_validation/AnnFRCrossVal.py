@@ -126,7 +126,7 @@ female_ukb_path = 'Input/UKB_female_Lung_Imputed_MAIN.csv'
 (male_fpr_plco, male_tpr_plco, male_auc_plco), (male_fpr_ukb, male_tpr_ukb, male_auc_ukb), male_cv_means, male_cv_stds, male_plco_train_metrics, male_ukb_metrics, male_history_list, male_history = cross_validate_and_train(male_plco_path, male_ukb_path)
 
 # Perform cross-validation and training for female data
-(female_fpr_plco, female_tpr_plco, female_auc_plco), (female_fpr_ukb, female_tpr_pl_ukb, female_auc_ukb), female_cv_means, female_cv_stds, female_plco_train_metrics, female_ukb_metrics, female_history_list, female_history = cross_validate_and_train(female_plco_path, female_ukb_path)
+(female_fpr_plco, female_tpr_plco, female_auc_plco), (female_fpr_ukb, female_tpr_ukb, female_auc_ukb), female_cv_means, female_cv_stds, female_plco_train_metrics, female_ukb_metrics, female_history_list, female_history = cross_validate_and_train(female_plco_path, female_ukb_path)
 
 # Plot the loss curves for male data
 plt.figure(figsize=(10, 5))
@@ -222,7 +222,7 @@ plt.plot([0, 1], [0, 1], 'k--')  # Baseline
 plt.plot(male_fpr_plco, male_tpr_plco, label=f'PLCO Male (AUC = {male_auc_plco:.3f})')
 plt.plot(male_fpr_ukb, male_tpr_ukb, label=f'UKB Male (AUC = {male_auc_ukb:.3f})')
 plt.plot(female_fpr_plco, female_tpr_plco, label=f'PLCO Female (AUC = {female_auc_plco:.3f})')
-plt.plot(female_fpr_ukb, female_tpr_pl_ukb, label=f'UKB Female (AUC = {female_auc_ukb:.3f})')
+plt.plot(female_fpr_ukb, female_tpr_ukb, label=f'UKB Female (AUC = {female_auc_ukb:.3f})')
 plt.xlabel('False Positive Rate')
 plt.ylabel('True Positive Rate')
 plt.title('Neural Network: ROC Curves for Lung Cancer Prediction CV')
