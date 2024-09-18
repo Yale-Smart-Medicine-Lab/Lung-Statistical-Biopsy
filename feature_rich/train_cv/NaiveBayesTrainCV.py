@@ -2,7 +2,7 @@ import sys
 import os.path
 sys.path.append(
     os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, os.path.pardir)))
-from helper_functions_teresa import nb_cross_validation_and_train, plot_loss_curves, table_of_metrics, plot_roc_curves
+from helper_functions import nb_cross_validation_and_train, plot_loss_curves, table_of_metrics, plot_roc_curves
 
 male_plco_path = 'Input/PLCO_male_Lung_Data_MAIN_imputed.csv'
 male_ukb_path = 'Input/UKB_male_Lung_Imputed_MAIN.csv'
